@@ -68,27 +68,14 @@ const KAT=['Dana kematian','Kas','Uang sampah','Uang agustusan'];
 const katSaldo=n=>S.kas.filter(k=>(k.kat||'Kas')===n).reduce((s,k)=>s+(k.jenis==='masuk'?k.jml:-k.jml),0);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const today=()=>new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
-const seed=()=>({
- users:[
-  {id:1,nama:'Pak Hendra (Ketua RT)',hp:'0811',pass:'admin123',blok:'A1',role:'super',status:'aktif'},
-  {id:2,nama:'Bu Sari (Sekretaris)',hp:'0812',pass:'admin123',blok:'A2',role:'admin',status:'aktif'},
-  {id:3,nama:'Budi Santoso',hp:'0813',pass:'warga123',blok:'B3',role:'warga',status:'aktif'},
-  {id:4,nama:'Dewi Lestari',hp:'0814',pass:'warga123',blok:'B5',role:'warga',status:'aktif'},
-  {id:5,nama:'Rudi Hartono',hp:'0815',pass:'warga123',blok:'C2',role:'warga',status:'menunggu'}],
- ann:[{id:1,judul:'Kerja bakti Minggu pagi',isi:'Kerja bakti membersihkan selokan, kumpul 07.00 di pos ronda. Mohon bawa sapu dan cangkul.',tgl:'3 Nov 2026'}],
- kas:[{id:1,tgl:'1 Nov 2026',ket:'Saldo awal',jenis:'masuk',jml:1500000},{id:2,tgl:'2 Nov 2026',ket:'Beli lampu pos ronda',jenis:'keluar',jml:150000}],
- iuran:{[BULAN]:[3]},nominal:50000,
- ronda:{Senin:[3],Selasa:[4],Rabu:[],Kamis:[],Jumat:[],Sabtu:[],Minggu:[]},
- aduan:[{id:1,uid:3,judul:'Lampu jalan blok B mati',isi:'Lampu di depan B3 mati sejak 3 hari lalu.',status:'Diproses',tgl:'2 Nov 2026'}],
- cams:[{id:1,nama:'Kamera demo (simulasi)',url:'demo'}],nid:100});
-let S;try{S=JSON.parse(localStorage.getItem('hw1'))}catch(e){}
+const seed=()=>({users:[],ann:[],kas:[],iuran:{},nominal:30000,ronda:{Senin:[],Selasa:[],Rabu:[],Kamis:[],Jumat:[],Sabtu:[],Minggu:[]},aduan:[],cams:[],toko:[],produk:[],trx:[],nid:100});
+let S;try{S=JSON.parse(localStorage.getItem('hw2'))}catch(e){}
 if(!S)S=seed();
-S.nominal=30000;S.trx=S.trx||[];
-if(!S.toko){S.toko=[{id:1,uid:4,nama:'Warung Dewi'}];S.produk=[{id:1,tid:1,nama:'Keripik pisang',harga:15000,stok:20},{id:2,tid:1,nama:'Es teh jumbo',harga:5000,stok:30}]}
-S.users.forEach(u=>{if(u.saldo==null)u.saldo=u.hp==='0813'?100000:0;if(u.hp==='0812'&&u.jabatan==null)u.jabatan='bendahara'});
+S.nominal=30000;S.trx=S.trx||[];S.toko=S.toko||[];S.produk=S.produk||[];
+S.users.forEach(u=>{if(u.saldo==null)u.saldo=0});
 let me=null,tab='beranda',msg='',authMode='masuk',camState={};
-try{const u=JSON.parse(localStorage.getItem('hw1u'));if(u)me=S.users.find(x=>x.id===u&&x.status==='aktif')||null}catch(e){}
-const save=()=>{try{localStorage.setItem('hw1',JSON.stringify(S));localStorage.setItem('hw1u',JSON.stringify(me?me.id:null))}catch(e){}};
+try{const u=JSON.parse(localStorage.getItem('hw2u'));if(u)me=S.users.find(x=>x.id===u&&x.status==='aktif')||null}catch(e){}
+const save=()=>{try{localStorage.setItem('hw2',JSON.stringify(S));localStorage.setItem('hw2u',JSON.stringify(me?me.id:null))}catch(e){}};
 const isAdm=()=>me&&(me.role==='admin'||me.role==='super');
 const isSup=()=>me&&me.role==='super';
 const nm=id=>(S.users.find(u=>u.id===id)||{nama:'(dihapus)'}).nama;
@@ -109,6 +96,7 @@ function draw(){
  startCams();
 }
 function authView(){
+ if(!S.users.length)return `<div class="auth"><div class="hero"><h1 style="font-size:32px">Hallo Warga 🏘️</h1><p>Pengaturan awal: buat akun Super Admin (Ketua RT).</p></div><div class="card">${msg?`<p class="bad" role="alert">${esc(msg)}</p>`:''}<label>Nama lengkap<input id="sn"></label><label>Nomor HP<input id="sh" inputmode="tel"></label><label>Kata sandi (min. 6 karakter)<input id="sp" type="password"></label><label>Blok / No. rumah<input id="sb"></label><button style="margin-top:8px" onclick="setupAdmin()">Buat akun Super Admin</button></div></div>`;
  const reg=authMode==='daftar';
  return `<div class="auth"><div class="hero"><h1 style="font-size:32px">Hallo Warga 🏘️</h1><p>Info, iuran, ronda, dan UMKM satu RT dalam satu aplikasi.</p></div>
  <div class="card">${msg?`<p class="bad" role="alert">${esc(msg)}</p>`:''}
@@ -117,8 +105,7 @@ function authView(){
  <label>Nomor HP<input id="lh" inputmode="tel" autocomplete="tel"></label>
  <label>Kata sandi<input id="lp" type="password" autocomplete="current-password"></label>
  <div class="row" style="margin-top:8px"><button onclick="${reg?'daftar()':'login()'}">${reg?'Kirim pendaftaran':'Masuk'}</button>
- <button class="g" onclick="authMode='${reg?'masuk':'daftar'}';msg='';draw()">${reg?'Sudah punya akun':'Daftar warga baru'}</button></div></div>
- <p class="mut">Akun demo (HP / sandi): Super Admin 0811 / admin123, Admin 0812 / admin123, Warga 0813 / warga123.</p></div>`;
+ <button class="g" onclick="authMode='${reg?'masuk':'daftar'}';msg='';draw()">${reg?'Sudah punya akun':'Daftar warga baru'}</button></div></div></div>`;
 }
 function login(){
  const u=S.users.find(x=>x.hp===val('lh').trim()&&x.pass===val('lp'));
@@ -136,6 +123,8 @@ function daftar(){
  S.users.push({id:id(),nama:n,hp:h,pass:p,blok:b,nik:nik,anggota:ang,tinggal:tg,saldo:0,role:'warga',status:'menunggu'});save();
  authMode='masuk';msg='Pendaftaran terkirim. Tunggu persetujuan admin sebelum masuk.';draw();
 }
+function setupAdmin(){const n=val('sn').trim(),h=val('sh').trim(),p=val('sp'),b=val('sb').trim();if(!n||!h||p.length<6){msg='Isi nama, nomor HP, dan sandi minimal 6 karakter.';return draw()}
+ const u={id:id(),nama:n,hp:h,pass:p,blok:b,tinggal:'Rumah tetap',nik:'',anggota:[],saldo:0,role:'super',status:'aktif'};S.users.push(u);me=u;msg='';tab='beranda';save();draw()}
 function logout(){me=null;msg='';save();draw()}
 
 function beranda(){
@@ -346,7 +335,7 @@ function admin(){
  <div class="row" style="margin-top:8px"><button class="s" onclick="setStatus(${u.id},'aktif')">Setujui</button><button class="d s" onclick="setStatus(${u.id},'ditolak')">Tolak</button></div></div>`).join('')||'<p class="mut">Tidak ada pendaftaran baru.</p>'}
  ${isSup()?`<h2>Kelola admin</h2><p class="mut">Hanya Super Admin yang bisa menunjuk atau menghapus admin. Buka tab Warga untuk mengubah peran.</p>
  ${S.users.filter(u=>u.role==='admin').map(u=>`<div class="card row sp">${esc(u.nama)}<button class="d s" onclick="setRole(${u.id},'warga')">Cabut admin</button></div>`).join('')||'<p class="mut">Belum ada admin biasa.</p>'}`:''}
- <button class="g s" style="margin-top:12px" onclick="if(confirm('Reset semua data demo?')){S=seed();me=null;save();draw()}">Reset data demo</button>`;
+ ${isSup()?`<button class="d s" style="margin-top:12px" onclick="if(confirm('Hapus SEMUA data aplikasi di HP ini? Tidak bisa dibatalkan.')){S=seed();me=null;save();draw()}">Hapus semua data</button>`:''}`;
 }
 draw();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
