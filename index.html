@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hallo Warga</title>
 <link rel="manifest" href="manifest.json">
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <meta name="theme-color" content="#0E6B5C">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -69,13 +72,14 @@ const katSaldo=n=>S.kas.filter(k=>(k.kat||'Kas')===n).reduce((s,k)=>s+(k.jenis==
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const today=()=>new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
 const seed=()=>({users:[],ann:[],kas:[],iuran:{},nominal:30000,ronda:{Senin:[],Selasa:[],Rabu:[],Kamis:[],Jumat:[],Sabtu:[],Minggu:[]},aduan:[],cams:[],toko:[],produk:[],trx:[],nid:100});
-let S;try{S=JSON.parse(localStorage.getItem('hw2'))}catch(e){}
+const CLOUD=!!(window.FIREBASE_CONFIG&&window.FIREBASE_CONFIG.apiKey);
+let S=null;if(!CLOUD){try{S=JSON.parse(localStorage.getItem('hw2'))}catch(e){}}
 if(!S)S=seed();
-S.nominal=30000;S.trx=S.trx||[];S.toko=S.toko||[];S.produk=S.produk||[];
-S.users.forEach(u=>{if(u.saldo==null)u.saldo=0});
+function fix(){S.nominal=30000;S.trx=S.trx||[];S.toko=S.toko||[];S.produk=S.produk||[];S.users.forEach(u=>{if(u.saldo==null)u.saldo=0})}
+fix();
 let me=null,tab='beranda',msg='',authMode='masuk',camState={};
 try{const u=JSON.parse(localStorage.getItem('hw2u'));if(u)me=S.users.find(x=>x.id===u&&x.status==='aktif')||null}catch(e){}
-const save=()=>{try{localStorage.setItem('hw2',JSON.stringify(S));localStorage.setItem('hw2u',JSON.stringify(me?me.id:null))}catch(e){}};
+const save=()=>{try{localStorage.setItem('hw2u',JSON.stringify(me?me.id:null));if(!CLOUD)localStorage.setItem('hw2',JSON.stringify(S))}catch(e){}if(CLOUD&&!loading&&JSON.stringify(S)!==LAST)push()};
 const isAdm=()=>me&&(me.role==='admin'||me.role==='super');
 const isSup=()=>me&&me.role==='super';
 const nm=id=>(S.users.find(u=>u.id===id)||{nama:'(dihapus)'}).nama;
@@ -83,9 +87,43 @@ const id=()=>++S.nid;
 const val=i=>(document.getElementById(i)||{}).value||'';
 const go=(t)=>{tab=t;msg='';draw()};
 const note=m=>{msg=m;draw()};
+async function H(hp,p){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(hp+':'+p+':hallowarga'));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return hp+':'+p}}
+/* Database online (Firebase Firestore): satu dokumen rt/data, tersinkron real-time */
+let loading=CLOUD,REF=null,RV=0,LAST='',inflight=0,chain=Promise.resolve();
+function initCloud(){
+ if(!window.firebase){loading=false;msg='Perlu koneksi internet untuk membuka data RT. Muat ulang halaman.';return}
+ try{firebase.initializeApp(window.FIREBASE_CONFIG);REF=firebase.firestore().collection('rt').doc('data')}catch(e){loading=false;msg='Gagal terhubung ke database.';return}
+ setTimeout(()=>{if(loading){loading=false;msg='Tidak bisa terhubung ke database. Periksa internet lalu muat ulang.';draw()}},10000);
+ REF.onSnapshot(snap=>{
+  if(snap.metadata.hasPendingWrites||inflight>0)return;
+  if(snap.metadata.fromCache&&!snap.exists)return;
+  const first=loading;
+  if(snap.exists){const d=snap.data();if(d.v===RV&&!first)return;try{S=JSON.parse(d.json);RV=d.v}catch(e){return}fix()}
+  LAST=JSON.stringify(S);loading=false;
+  let uid=me?me.id:null;if(!uid){try{uid=JSON.parse(localStorage.getItem('hw2u'))}catch(e){}}
+  me=uid?(S.users.find(x=>x.id===uid&&x.status==='aktif')||null):null;
+  const ae=document.activeElement;
+  if(first||!(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)))draw();
+ },err=>{loading=false;msg='Gagal membaca data ('+(err.code||'error')+'). Periksa aturan database di Firebase.';draw()});
+}
+function push(){
+ inflight++;
+ chain=chain.then(async()=>{
+  const j=JSON.stringify(S);
+  try{
+   RV=await firebase.firestore().runTransaction(async t=>{const s=await t.get(REF);const cur=s.exists?s.data().v:0;if(cur!==RV)throw new Error('conflict');t.set(REF,{json:j,v:cur+1});return cur+1});LAST=j;
+  }catch(e){
+   try{const s=await REF.get({source:'server'});if(s.exists){S=JSON.parse(s.data().json);RV=s.data().v;fix();LAST=JSON.stringify(S)}}catch(_){}
+   me=me?(S.users.find(x=>x.id===me.id&&x.status==='aktif')||null):null;
+   msg=e.message==='conflict'?'Data baru masuk dari perangkat lain, jadi aksi terakhir dibatalkan. Silakan ulangi.':'Gagal menyimpan. Periksa internet lalu ulangi.';
+   draw();
+  }finally{inflight--}
+ });
+}
 
 function draw(){
  const a=document.getElementById('app');
+ if(loading){a.innerHTML='<div class="auth"><div class="hero"><h1 style="font-size:32px">Hallo Warga</h1><p>Memuat data RT…</p></div></div>';return}
  if(!me){a.innerHTML=authView();return}
  const tabs=[['beranda','Beranda'],['info','Pengumuman'],['dompet','Dompet'],['umkm','UMKM'],['toko','Toko saya'],['kas','Kas'],['ronda','Ronda'],['aduan','Aduan'],['cctv','CCTV'],['warga','Warga'],['profil','Profil']];
  if(isAdm())tabs.push(['trx','Transaksi'],['admin','Dashboard']);
@@ -96,7 +134,7 @@ function draw(){
  startCams();
 }
 function authView(){
- if(!S.users.length)return `<div class="auth"><div class="hero"><h1 style="font-size:32px">Hallo Warga 🏘️</h1><p>Pengaturan awal: buat akun Super Admin (Ketua RT).</p></div><div class="card">${msg?`<p class="bad" role="alert">${esc(msg)}</p>`:''}<label>Nama lengkap<input id="sn"></label><label>Nomor HP<input id="sh" inputmode="tel"></label><label>Kata sandi (min. 6 karakter)<input id="sp" type="password"></label><label>Blok / No. rumah<input id="sb"></label><button style="margin-top:8px" onclick="setupAdmin()">Buat akun Super Admin</button></div></div>`;
+ if(!S.users.length&&location.hash==='#setup')return `<div class="auth"><div class="hero"><h1 style="font-size:32px">Hallo Warga 🏘️</h1><p>Pengaturan awal: buat akun Super Admin (Ketua RT).</p></div><div class="card">${msg?`<p class="bad" role="alert">${esc(msg)}</p>`:''}<label>Nama lengkap<input id="sn"></label><label>Nomor HP<input id="sh" inputmode="tel"></label><label>Kata sandi (min. 6 karakter)<input id="sp" type="password"></label><label>Blok / No. rumah<input id="sb"></label><button style="margin-top:8px" onclick="setupAdmin()">Buat akun Super Admin</button></div></div>`;
  const reg=authMode==='daftar';
  return `<div class="auth"><div class="hero"><h1 style="font-size:32px">Hallo Warga 🏘️</h1><p>Info, iuran, ronda, dan UMKM satu RT dalam satu aplikasi.</p></div>
  <div class="card">${msg?`<p class="bad" role="alert">${esc(msg)}</p>`:''}
@@ -107,24 +145,25 @@ function authView(){
  <div class="row" style="margin-top:8px"><button onclick="${reg?'daftar()':'login()'}">${reg?'Kirim pendaftaran':'Masuk'}</button>
  <button class="g" onclick="authMode='${reg?'masuk':'daftar'}';msg='';draw()">${reg?'Sudah punya akun':'Daftar warga baru'}</button></div></div></div>`;
 }
-function login(){
- const u=S.users.find(x=>x.hp===val('lh').trim()&&x.pass===val('lp'));
+async function login(){
+ const hp=val('lh').trim(),ph=await H(hp,val('lp'));
+ const u=S.users.find(x=>x.hp===hp&&x.pass===ph);
  if(!u){msg='Nomor HP atau kata sandi salah.';return draw()}
  if(u.status==='menunggu'){msg='Pendaftaran Anda masih menunggu persetujuan admin.';return draw()}
  if(u.status==='ditolak'){msg='Pendaftaran Anda ditolak. Hubungi pengurus RT.';return draw()}
  me=u;msg='';tab='beranda';save();draw();
 }
-function daftar(){
+async function daftar(){
  const n=val('rn').trim(),h=val('lh').trim(),p=val('lp'),b=val('rb').trim();const nik=val('rk').replace(/\s/g,''),tg=val('rs'),ang=val('ra').split('\n').map(x=>x.trim()).filter(Boolean);
  if(!n||!h||p.length<6){msg='Isi nama, nomor HP, dan sandi minimal 6 karakter.';return draw()}
  if(!/^\d{16}$/.test(nik)){msg='NIK kepala keluarga harus 16 angka.';return draw()}
  if(!ang.length){msg='Isi minimal satu anggota keluarga dalam KK.';return draw()}
  if(S.users.some(u=>u.hp===h)){msg='Nomor HP ini sudah terdaftar.';return draw()}
- S.users.push({id:id(),nama:n,hp:h,pass:p,blok:b,nik:nik,anggota:ang,tinggal:tg,saldo:0,role:'warga',status:'menunggu'});save();
+ S.users.push({id:id(),nama:n,hp:h,pass:await H(h,p),blok:b,nik:nik,anggota:ang,tinggal:tg,saldo:0,role:'warga',status:'menunggu'});save();
  authMode='masuk';msg='Pendaftaran terkirim. Tunggu persetujuan admin sebelum masuk.';draw();
 }
-function setupAdmin(){const n=val('sn').trim(),h=val('sh').trim(),p=val('sp'),b=val('sb').trim();if(!n||!h||p.length<6){msg='Isi nama, nomor HP, dan sandi minimal 6 karakter.';return draw()}
- const u={id:id(),nama:n,hp:h,pass:p,blok:b,tinggal:'Rumah tetap',nik:'',anggota:[],saldo:0,role:'super',status:'aktif'};S.users.push(u);me=u;msg='';tab='beranda';save();draw()}
+async function setupAdmin(){if(S.users.length){location.hash='';return note('Akun Super Admin sudah ada. Silakan masuk.')}const n=val('sn').trim(),h=val('sh').trim(),p=val('sp'),b=val('sb').trim();if(!n||!h||p.length<6){msg='Isi nama, nomor HP, dan sandi minimal 6 karakter.';return draw()}
+ const u={id:id(),nama:n,hp:h,pass:await H(h,p),blok:b,tinggal:'Rumah tetap',nik:'',anggota:[],saldo:0,role:'super',status:'aktif'};S.users.push(u);me=u;msg='';tab='beranda';history.replaceState(null,'',location.pathname);save();draw()}
 function logout(){me=null;msg='';save();draw()}
 
 function beranda(){
@@ -337,6 +376,8 @@ function admin(){
  ${S.users.filter(u=>u.role==='admin').map(u=>`<div class="card row sp">${esc(u.nama)}<button class="d s" onclick="setRole(${u.id},'warga')">Cabut admin</button></div>`).join('')||'<p class="mut">Belum ada admin biasa.</p>'}`:''}
  ${isSup()?`<button class="d s" style="margin-top:12px" onclick="if(confirm('Hapus SEMUA data aplikasi di HP ini? Tidak bisa dibatalkan.')){S=seed();me=null;save();draw()}">Hapus semua data</button>`:''}`;
 }
+window.addEventListener('hashchange',()=>draw());
+if(CLOUD)initCloud();
 draw();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
