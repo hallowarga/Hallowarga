@@ -318,7 +318,7 @@ function dompet(){
  <h2>Isi saldo</h2><div class="card"><p class="mut">Setor tunai ke bendahara atau humas, lalu ajukan di sini. Saldo masuk setelah mereka menerima.</p>
  <div class="row">${[20000,50000,100000,200000].map(n=>`<button class="g s" onclick="document.getElementById('rq').value=${n}">${rp(n)}</button>`).join('')}</div>
  <input id="rq" type="number" inputmode="numeric" placeholder="Jumlah (Rp)"><button onclick="ajukanTopup()">Ajukan isi saldo</button>
- <p class="mut" style="margin-bottom:0">Setor ke: ${petugas.map(u=>esc(u.nama)+(u.jabatan?' ('+u.jabatan+')':'')+' '+esc(u.hp)).join(' · ')||'belum ada petugas'}</p></div>
+ <p class="mut" style="margin-bottom:0">Setor ke: ${petugas.map(u=>esc(u.nama)+(u.jabatan?' ('+u.jabatan+')':'')+' '+showHp(u.hp)).join(' · ')||'belum ada petugas'}${isAdm()?'':'<br>Nomor disamarkan demi privasi. Hubungi lewat menu Bantuan (chat).'}</p></div>
  ${mine.map(r=>`<div class="card row sp"><div>Permintaan ${rp(r.jml)}<br><span class="mut">${esc(r.tgl)}</span></div><span class="tag ${r.status==='selesai'?'ok':r.status==='ditolak'?'bad':''}">${r.status}</span></div>`).join('')}
  <h2>Iuran bulanan ${BULAN}</h2><div class="card">${IURAN.map(i=>`<div class="row sp"><span>${i[0]}</span><b>${rp(i[1])}</b></div>`).join('')}<div class="row sp" style="border-top:1px solid var(--line);margin-top:6px;padding-top:6px"><b>Total</b><b>${rp(IURAN_TOTAL)}</b></div>
  ${lunas?'<p class="ok"><b>Iuran bulan ini sudah lunas.</b></p>':`<button style="margin-top:8px" onclick="bayarIuran()">Bayar ${rp(IURAN_TOTAL)} dari saldo</button>`}</div>
@@ -468,7 +468,7 @@ function setOrder(oid,st){
 function ordCard(o,sellerView){
  const b=usr(o.buyer),t=S.toko.find(x=>x.id===o.tid)||{};
  return `<div class="card"><div class="row sp"><b>#${o.id} \u00b7 ${esc(o.nama)} \u00d7 ${o.qty}</b><span class="tag ${o.status==='selesai'?'ok':o.status==='batal'?'bad':''}">${ORD[o.status]}</span></div>
- <span class="mut">${esc(o.tgl)} \u00b7 ${sellerView?'Pembeli: '+esc(nm(o.buyer))+(b?' (Blok '+esc(b.blok||'-')+', '+esc(b.hp)+')':''):'Toko: '+esc(t.nama||'-')}</span>
+ <span class="mut">${esc(o.tgl)} \u00b7 ${sellerView?'Pembeli: '+esc(nm(o.buyer))+(b?' (Blok '+esc(b.blok||'-')+', '+showHp(b.hp)+')':''):'Toko: '+esc(t.nama||'-')}</span>
  <div style="margin-top:6px">${o.metode==='antar'?'🛵 Diantar ke: '+esc(o.alamat):'🚶 Ambil sendiri di: '+esc(o.alamat||'warung')}</div>
  ${o.cat?`<div class="mut">Catatan: ${esc(o.cat)}</div>`:''}
  <div class="row sp" style="margin-top:6px"><span class="mut">Subtotal ${rp(o.sub)}${o.ongkir?' + ongkir '+rp(o.ongkir):''}</span><b>${rp(o.total)}</b></div>
@@ -656,6 +656,8 @@ function stokTambah(p){S.produk.find(x=>x.id===p).stok+=10;save();draw()}
 function delProduk(p){S.produk=S.produk.filter(x=>x.id!==p);if(CLOUD&&window.firebase)firebase.firestore().collection('img').doc(String(p)).delete().catch(()=>{});save();draw()}
 
 /* Lupa sandi: reset oleh pengurus tanpa OTP, kode pemulihan untuk Super Admin */
+function maskNum(v){v=String(v||'');const n=v.length;if(!n)return '-';if(n>=9)return v.slice(0,4)+'*'.repeat(n-8)+v.slice(-4);if(n<=2)return '*'.repeat(n);const k=n>=7?2:1;return v.slice(0,k)+'*'.repeat(n-2*k)+v.slice(-k)}
+const showHp=v=>isAdm()?esc(v):esc(maskNum(v));
 let gantiUid=null,recTry=0,recLock=0;
 const okMsg=m=>/^(Permintaan terkirim|Sandi baru)/.test(m);
 function genPass(n){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=crypto.getRandomValues(new Uint8Array(n||8));return Array.from(r).map(x=>a[x%a.length]).join('')}
@@ -732,7 +734,7 @@ function profil(){
  <button onclick="saveProfil()">Simpan perubahan</button></div>
  <details class="card"><summary><b>Ubah sandi</b></summary><input id="so" type="password" placeholder="Sandi lama" autocomplete="current-password"><input id="sn1" type="password" placeholder="Sandi baru (min. 6 karakter)" autocomplete="new-password"><input id="sn2" type="password" placeholder="Ulangi sandi baru" autocomplete="new-password"><button onclick="ubahSandi()">Simpan sandi baru</button></details>
  ${isSup()?`<details class="card"><summary><b>Kode pemulihan sandi</b> \u00b7 ${S.recov?'sudah dibuat':'belum dibuat'}</summary><p class="mut">Kode ini satu-satunya cara Super Admin masuk kembali jika lupa sandi, karena admin lain tidak bisa mereset Super Admin. Catat di tempat aman.</p><button onclick="buatKode()">${S.recov?'Buat kode baru':'Buat kode pemulihan'}</button></details>`:''}
- <button class="d" style="width:100%;margin-top:4px" onclick="logout()">Keluar dari akun</button><p class="mut" style="text-align:center;font-size:12px">Hallo Warga \u00b7 versi 9</p>`;
+ <button class="d" style="width:100%;margin-top:4px" onclick="logout()">Keluar dari akun</button><p class="mut" style="text-align:center;font-size:12px">Hallo Warga \u00b7 versi 10</p>`;
 }
 function saveProfil(){
  const n=val('pn').trim(),nik=val('pk').replace(/\s/g,''),ang=val('pa').split('\n').map(x=>x.trim()).filter(Boolean);
@@ -745,7 +747,7 @@ function saveProfil(){
 function warga(){
  const adm=isAdm();
  const list=S.users.filter(u=>adm||u.status==='aktif');
- return `<h2>Data warga</h2>${list.map(u=>`<div class="card"><div class="row sp"><div><h3>${esc(u.nama)}</h3><span class="mut">Blok ${esc(u.blok||'-')} · ${esc(u.tinggal||'Rumah tetap')}${adm?' · '+esc(u.hp):''}</span>${adm&&u.nik?`<br><span class="mut">NIK KK ${esc(u.nik)} · ${(u.anggota||[]).length} orang: ${esc((u.anggota||[]).join(', '))}</span>`:''}</div>
+ return `<h2>Data warga</h2>${list.map(u=>`<div class="card"><div class="row sp"><div><h3>${esc(u.nama)}</h3><span class="mut">Blok ${esc(u.blok||'-')} · ${esc(u.tinggal||'Rumah tetap')}${' · '+showHp(u.hp)}</span>${u.nik?`<br><span class="mut">NIK KK ${adm?esc(u.nik):esc(maskNum(u.nik))} · ${(u.anggota||[]).length} orang${adm?': '+esc((u.anggota||[]).join(', ')):''}</span>`:''}</div>
  <div class="row">${u.role!=='warga'?`<span class="tag">${roleLabel(u)}</span>`:''}${u.status!=='aktif'?`<span class="tag bad">${u.status}</span>`:''}</div></div>
  ${adm&&u.id!==me.id&&u.role!=='super'?`<div class="row" style="margin-top:8px">${u.status==='menunggu'?`<button class="s" onclick="setStatus(${u.id},'aktif')">Setujui</button><button class="d s" onclick="setStatus(${u.id},'ditolak')">Tolak</button>`:''}
  ${u.role==='warga'&&u.status==='aktif'&&isSup()?`<button class="g s" onclick="setRole(${u.id},'admin')">Jadikan admin</button>`:''}
