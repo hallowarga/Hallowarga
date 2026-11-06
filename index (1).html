@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hallo Warga</title>
+<link rel="manifest" href="manifest.json">
+<script src="config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<meta name="theme-color" content="#0E6B5C">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F1F5EF;--card:#fff;--ink:#12261F;--mut:#5A6E66;--pri:#0E6B5C;--pri-ink:#fff;--acc:#F4B33D;--bad:#B42318;--line:#DCE6DF;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0F1A17;--card:#172622;--ink:#E4F0EC;--mut:#93A9A1;--pri:#2DD4BF;--pri-ink:#06211D;--acc:#F2B450;--bad:#F87171;--line:#2A3E38}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0F1A17;--card:#172622;--ink:#E4F0EC;--mut:#93A9A1;--pri:#2DD4BF;--pri-ink:#06211D;--acc:#F2B450;--bad:#F87171;--line:#2A3E38}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 'Plus Jakarta Sans',system-ui,sans-serif;min-height:100vh}
+#app{max-width:640px;margin:0 auto;padding:0 16px 96px}
+h1,h2,h3{margin:0;line-height:1.2}
+h1{font-size:28px;font-weight:800}h2{font-size:20px;font-weight:800;margin:20px 0 10px}h3{font-size:16px;font-weight:700}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:10px;box-shadow:0 1px 2px rgba(18,38,31,.05)}
+.mut{color:var(--mut);font-size:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sp{justify-content:space-between}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:4px 0}
+textarea{min-height:70px}
+button{font:600 15px 'Plus Jakarta Sans',system-ui,sans-serif;border:0;border-radius:10px;padding:10px 14px;background:var(--pri);color:var(--pri-ink);cursor:pointer}
+button.g{background:transparent;color:var(--pri);border:1px solid var(--line)}
+button.d{background:transparent;color:var(--bad);border:1px solid var(--line)}
+button.s{padding:6px 10px;font-size:13px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line)}
+.ok{color:var(--pri)}.bad{color:var(--bad)}
+.top{display:flex;justify-content:space-between;align-items:center;padding:16px 0 8px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav div{max-width:640px;margin:0 auto;display:flex;overflow-x:auto}
+nav button{flex:1 0 auto;min-width:72px;background:transparent;color:var(--mut);border-radius:0;padding:12px 8px;font-size:13px}
+nav button.on{color:var(--pri);font-weight:800;box-shadow:inset 0 3px 0 var(--pri);background:color-mix(in srgb,var(--pri) 10%,var(--card))}
+.hero{position:relative;overflow:hidden;background:linear-gradient(150deg,#0E6B5C,#08403A);color:#fff;border-radius:24px;padding:22px 20px 60px;margin-top:8px}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 234 40'%3E%3Cpath d='M0 40V26l16-12 16 12v14h6V22l18-14 18 14v18h8V28l14-10 14 10v12h6V24l20-16 20 16v16h10V30l14-10 14 10v10h8V26l16-12 16 12v14z' fill='white' fill-opacity='.13'/%3E%3C/svg%3E") repeat-x left bottom/234px 40px}
+.hero .hi{opacity:.85;font-size:14px}
+.hero .sal{font-size:38px;font-weight:800;margin:2px 0;letter-spacing:-.5px}
+.hb{background:var(--acc);color:#2A1B00}
+.hb.o{background:rgba(255,255,255,.16);color:#fff}
+.hero p{margin:6px 0 0;opacity:.9}
+.stat{flex:1 1 130px}.stat b{display:block;font-size:26px;font-weight:800}
+.cam{width:100%;aspect-ratio:16/9;background:#0b1210;border-radius:10px;display:block;object-fit:cover}
+.hari{font-weight:800;margin:10px 0 4px}
+.chip{display:inline-flex;gap:6px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:3px 6px 3px 10px;font-size:14px;margin:2px}
+.chip button{padding:0 6px;background:none;color:var(--bad);font-size:16px}
+.auth{margin-top:12px}
+.pimg{width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--bg);flex:none}
+.fbtn{display:inline-block;padding:6px 10px;font-size:13px;font-weight:600;border:1px solid var(--line);border-radius:10px;color:var(--pri);cursor:pointer}
+.bub{max-width:84%;padding:8px 12px;border-radius:14px;margin:4px 0;background:var(--bg);border:1px solid var(--line);word-break:break-word}
+.bub.me{margin-left:auto;background:color-mix(in srgb,var(--pri) 16%,var(--card))}
+.msgs{max-height:52vh;overflow-y:auto;padding:4px 0}
+.badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:99px;background:var(--bad);color:#fff;font-size:11px;margin-left:4px}
+details.card summary{cursor:pointer}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;text-align:left;padding:0;color:var(--ink);font-weight:400}
+.pcard .pb{padding:8px 10px;font-size:14px}
+.ph{width:100%;aspect-ratio:1;object-fit:cover;background:var(--bg);font-size:34px;display:grid;place-items:center}
+img.ph{display:block}
+.big{width:100%;aspect-ratio:1;object-fit:cover;border-radius:18px;margin-top:10px;background:var(--bg)}
+div.big{display:grid;place-items:center;font-size:54px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tile{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:left;font-size:16px;min-height:76px}
+.tile b{font-weight:800}
+.ic{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:color-mix(in srgb,var(--pri) 14%,var(--card));font-size:21px;margin-bottom:8px}
+.ni{display:block;font-size:20px;line-height:1.2}
+nav{box-shadow:0 -4px 16px rgba(18,38,31,.08)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const HARI=['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
+const BULAN=new Date().toISOString().slice(0,7);
+const rp=n=>'Rp '+Number(n).toLocaleString('id-ID');
+const KAT=['Dana kematian','Kas','Uang sampah','Uang agustusan'];
+const katSaldo=n=>S.kas.filter(k=>(k.kat||'Kas')===n).reduce((s,k)=>s+(k.jenis==='masuk'?k.jml:-k.jml),0);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today=()=>new Date().toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
+const seed=()=>({users:[],ann:[],kas:[],iuran:{},nominal:30000,ronda:{Senin:[],Selasa:[],Rabu:[],Kamis:[],Jumat:[],Sabtu:[],Minggu:[]},aduan:[],cams:[],toko:[],produk:[],trx:[],nid:100});
+const CLOUD=!!(window.FIREBASE_CONFIG&&window.FIREBASE_CONFIG.apiKey);
+let S=null;if(!CLOUD){try{S=JSON.parse(localStorage.getItem('hw2'))}catch(e){}}
+if(!S)S=seed();
+function fix(){S.nominal=30000;S.topupReq=S.topupReq||[];S.orders=S.orders||[];S.tarik=S.tarik||[];S.trx=S.trx||[];S.toko=S.toko||[];S.produk=S.produk||[];S.users.forEach(u=>{if(u.saldo==null)u.saldo=0})}
+fix();
+let me=null,tab='beranda',msg='',authMode='masuk',camState={};
+try{const u=JSON.parse(localStorage.getItem('hw2u'));if(u)me=S.users.find(x=>x.id===u&&x.status==='aktif')||null}catch(e){}
+const save=()=>{try{localStorage.setItem('hw2u',JSON.stringify(me?me.id:null));if(!CLOUD)localStorage.setItem('hw2',JSON.stringify(S))}catch(e){}if(CLOUD&&!loading&&JSON.stringify(S)!==LAST)push()};
+const isAdm=()=>me&&(me.role==='admin'||me.role==='super');
+const isSup=()=>me&&me.role==='super';
+const nm=id=>(S.users.find(u=>u.id===id)||{nama:'(dihapus)'}).nama;
+const id=()=>++S.nid;
+const val=i=>(document.getElementById(i)||{}).value||'';
+const go=(t)=>{tab=t;msg='';if(t==='umkm'){UM.pid=null;UM.co=false}draw()};
+const note=m=>{msg=m;draw()};
+async function H(hp,p){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(hp+':'+p+':hallowarga'));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return hp+':'+p}}
+/* Database online (Firebase Firestore): satu dokumen rt/data, tersinkron real-time */
+let loading=CLOUD,REF=null,RV=0,LAST='',inflight=0,chain=Promise.resolve();
+function initCloud(){
+ if(!window.firebase){loading=false;msg='Perlu koneksi internet untuk membuka data RT. Muat ulang halaman.';return}
+ try{firebase.initializeApp(window.FIREBASE_CONFIG);REF=firebase.firestore().collection('rt').doc('data')}catch(e){loading=false;msg='Gagal terhubung ke database.';return}
+ setTimeout(()=>{if(loading){loading=false;msg='Tidak bisa terhubung ke database. Periksa internet lalu muat ulang.';draw()}},10000);
+ REF.onSnapshot(snap=>{
+  if(snap.metadata.hasPendingWrites||inflight>0)return;
+  if(snap.metadata.fromCache&&!snap.exists)return;
+  const first=loading;
+  if(snap.exists){const d=snap.data();if(d.v===RV&&!first)return;let old=null;try{old=first?null:S;S=JSON.parse(d.json);RV=d.v}catch(e){return}fix();try{if(old&&me)diffNotify(old,S)}catch(e){}}
+  LAST=JSON.stringify(S);loading=false;
+  let uid=me?me.id:null;if(!uid){try{uid=JSON.parse(localStorage.getItem('hw2u'))}catch(e){}}
+  me=uid?(S.users.find(x=>x.id===uid&&x.status==='aktif')||null):null;
+  const ae=document.activeElement;
+  if(first||!(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)))draw();
+ },err=>{loading=false;msg='Gagal membaca data ('+(err.code||'error')+'). Periksa aturan database di Firebase.';draw()});
+}
+function push(){
+ inflight++;
+ chain=chain.then(async()=>{
+  const j=JSON.stringify(S);
+  try{
+   RV=await firebase.firestore().runTransaction(async t=>{const s=await t.get(REF);const cur=s.exists?s.data().v:0;if(cur!==RV)throw new Error('conflict');t.set(REF,{json:j,v:cur+1});return cur+1});LAST=j;
+  }catch(e){
+   try{const s=await REF.get({source:'server'});if(s.exists){S=JSON.parse(s.data().json);RV=s.data().v;fix();LAST=JSON.stringify(S)}}catch(_){}
+   me=me?(S.users.find(x=>x.id===me.id&&x.status==='aktif')||null):null;
+   msg=e.message==='conflict'?'Data baru masuk dari perangkat lain, jadi aksi terakhir dibatalkan. Silakan ulangi.':'Gagal menyimpan. Periksa internet lalu ulangi.';
+   draw();
+  }finally{inflight--}
+ });
+}
+
+function draw(){
+ const a=document.getElementById('app');
+ if(loading){a.innerHTML='<div class="auth"><div class="hero"><h1 style="font-size:32px">Hallo Warga</h1><p>Memuat data RT…</p></div></div>';return}
+ if(!me){a.innerHTML=authView();return}
+ const tabs=[['beranda','Beranda'],['info','Pengumuman'],['dompet','Dompet'],['umkm','UMKM'],['pesanan','Pesanan'],['toko','Toko saya'],['kas','Kas'],['ronda','Ronda'],['aduan','Aduan'],['chat','Chat'],['cctv','CCTV'],['warga','Warga'],['profil','Profil']];
+ if(isAdm())tabs.push(['trx','Transaksi'],['admin','Dashboard']);
+ const v={beranda,info,kas,ronda,aduan,cctv,warga,profil,admin,dompet,umkm,pesanan,toko,chat,notif,trx:trxView}[tab]();
+ a.innerHTML=`<div class="top"><div><h1>Hallo Warga</h1><span class="mut">${esc(me.nama)} · ${roleLabel(me)}</span></div><div class="row"><button class="g s" onclick="go('notif')" aria-label="Notifikasi">🔔<span id="bellc" class="badge" style="display:${unread?'inline-block':'none'}">${unread||''}</span></button><button class="g s" onclick="logout()">Keluar</button></div></div>
+ ${msg?`<div class="card" role="status">${esc(msg)}</div>`:''}${v}
+ <nav><div>${tabs.map(t=>`<button class="${tab===t[0]?'on':''}" onclick="go('${t[0]}')"><span class="ni">${IC[t[0]]||'•'}</span>${t[1]}</button>`).join('')}</div></nav>`;
+  startCams();loadImgs();
+ const mg=document.getElementById('msgs');if(mg)mg.scrollTop=mg.scrollHeight;
+ if(me&&!chatUnsub)startChat();
+}
+function authView(){
+ if(!S.users.length&&location.hash==='#setup')return `<div class="auth"><div class="hero"><h1 style="font-size:32px">Hallo Warga 🏘️</h1><p>Pengaturan awal: buat akun Super Admin (Ketua RT).</p></div><div class="card">${msg?`<p class="bad" role="alert">${esc(msg)}</p>`:''}<label>Nama lengkap<input id="sn"></label><label>Nomor HP<input id="sh" inputmode="tel"></label><label>Kata sandi (min. 6 karakter)<input id="sp" type="password"></label><label>Blok / No. rumah<input id="sb"></label><button style="margin-top:8px" onclick="setupAdmin()">Buat akun Super Admin</button></div></div>`;
+ const reg=authMode==='daftar';
+ return `<div class="auth"><div class="hero"><h1 style="font-size:32px">Hallo Warga 🏘️</h1><p>Info, iuran, ronda, dan UMKM satu RT dalam satu aplikasi.</p></div>
+ <div class="card">${msg?`<p class="bad" role="alert">${esc(msg)}</p>`:''}
+ <h3>${reg?'Daftar sebagai warga':'Masuk'}</h3>
+ ${reg?'<label>Nama lengkap<input id="rn" autocomplete="name"></label><label>NIK kepala keluarga (16 angka)<input id="rk" inputmode="numeric" maxlength="16"></label><label>Anggota dalam 1 KK (satu nama per baris, termasuk kepala keluarga)<textarea id="ra" placeholder="Budi Santoso&#10;Ani Santoso&#10;Dika Santoso"></textarea></label><label>Blok / No. rumah<input id="rb" placeholder="B3"></label><label>Status tempat tinggal<select id="rs"><option>Rumah tetap</option><option>Ngontrak</option><option>Kos</option></select></label>':''}
+ <label>Nomor HP<input id="lh" inputmode="tel" autocomplete="tel"></label>
+ <label>Kata sandi<input id="lp" type="password" autocomplete="current-password"></label>
+ <div class="row" style="margin-top:8px"><button onclick="${reg?'daftar()':'login()'}">${reg?'Kirim pendaftaran':'Masuk'}</button>
+ <button class="g" onclick="authMode='${reg?'masuk':'daftar'}';msg='';draw()">${reg?'Sudah punya akun':'Daftar warga baru'}</button></div></div></div>`;
+}
+async function login(){
+ const hp=val('lh').trim(),ph=await H(hp,val('lp'));
+ const u=S.users.find(x=>x.hp===hp&&x.pass===ph);
+ if(!u){msg='Nomor HP atau kata sandi salah.';return draw()}
+ if(u.status==='menunggu'){msg='Pendaftaran Anda masih menunggu persetujuan admin.';return draw()}
+ if(u.status==='ditolak'){msg='Pendaftaran Anda ditolak. Hubungi pengurus RT.';return draw()}
+ me=u;msg='';tab='beranda';save();draw();
+}
+async function daftar(){
+ const n=val('rn').trim(),h=val('lh').trim(),p=val('lp'),b=val('rb').trim();const nik=val('rk').replace(/\s/g,''),tg=val('rs'),ang=val('ra').split('\n').map(x=>x.trim()).filter(Boolean);
+ if(!n||!h||p.length<6){msg='Isi nama, nomor HP, dan sandi minimal 6 karakter.';return draw()}
+ if(!/^\d{16}$/.test(nik)){msg='NIK kepala keluarga harus 16 angka.';return draw()}
+ if(!ang.length){msg='Isi minimal satu anggota keluarga dalam KK.';return draw()}
+ if(S.users.some(u=>u.hp===h)){msg='Nomor HP ini sudah terdaftar.';return draw()}
+ S.users.push({id:id(),nama:n,hp:h,pass:await H(h,p),blok:b,nik:nik,anggota:ang,tinggal:tg,saldo:0,role:'warga',status:'menunggu'});save();
+ authMode='masuk';msg='Pendaftaran terkirim. Tunggu persetujuan admin sebelum masuk.';draw();
+}
+async function setupAdmin(){if(S.users.length){location.hash='';return note('Akun Super Admin sudah ada. Silakan masuk.')}const n=val('sn').trim(),h=val('sh').trim(),p=val('sp'),b=val('sb').trim();if(!n||!h||p.length<6){msg='Isi nama, nomor HP, dan sandi minimal 6 karakter.';return draw()}
+ const u={id:id(),nama:n,hp:h,pass:await H(h,p),blok:b,tinggal:'Rumah tetap',nik:'',anggota:[],saldo:0,role:'super',status:'aktif'};S.users.push(u);me=u;msg='';tab='beranda';history.replaceState(null,'',location.pathname);save();draw()}
+function logout(){stopChat();me=null;msg='';save();draw()}
+
+function beranda(){
+ const sal=S.kas.reduce((s,k)=>s+(k.jenis==='masuk'?k.jml:-k.jml),0);
+ const lunas=(S.iuran[BULAN]||[]).includes(me.id);
+ const hr=HARI[(new Date().getDay()+6)%7];
+ const a=S.ann[0];
+ return `<div class="hero"><span class="hi">Halo, ${esc(me.nama.split(' ')[0])} 👋</span><div class="sal">${rp(me.saldo)}</div><span class="hi">Saldo dompet · Blok ${esc(me.blok||'-')}</span><div class="row" style="margin-top:14px"><button class="hb" onclick="go('dompet')">Bayar iuran</button><button class="hb o" onclick="go('umkm')">Belanja UMKM</button></div></div>
+ <h2>Menu</h2><div class="grid">${[['dompet','Dompet',rp(me.saldo)],['dompet','Bayar iuran',lunas?'Lunas bulan ini':rp(IURAN_TOTAL)],['umkm','UMKM','Belanja dari warga'],['pesanan','Pesanan saya','Riwayat belanja'],['toko','Toko saya','Buka toko dan jual'],['info','Pengumuman',''],['aduan','Pengaduan',''],['chat','Chat admin','Tanya pengurus'],['ronda','Ronda',''],['cctv','CCTV','']].concat(isAdm()?[['trx','Transaksi','Semua saldo'],['admin','Dashboard','']]:[]).map(t=>`<button class="tile" onclick="go('${t[0]}')"><span class="ic">${IC[t[1]]||IC[t[0]]||'•'}</span><b>${t[1]}</b><br><span class="mut">${t[2]}</span></button>`).join('')}</div>
+ <h2>Hari ini</h2>
+ <div class="row"><div class="card stat">Saldo kas RT<b>${rp(sal)}</b></div><div class="card stat">Iuran bulan ini<b class="${lunas?'ok':'bad'}">${lunas?'Lunas':'Belum'}</b></div></div>
+ <div class="card">Ronda ${hr}: ${(S.ronda[hr]||[]).map(nm).join(', ')||'belum ada jadwal'}</div>
+ ${a?`<h2>Pengumuman terbaru</h2><div class="card"><h3>${esc(a.judul)}</h3><p>${esc(a.isi)}</p><span class="mut">${esc(a.tgl)}</span></div>`:''}`;
+}
+function info(){
+ return `<h2>Pengumuman RT</h2>${isAdm()?`<div class="card"><h3>Buat pengumuman</h3><input id="ij" placeholder="Judul"><textarea id="ii" placeholder="Isi pengumuman"></textarea><button onclick="addAnn()">Terbitkan</button></div>`:''}
+ ${S.ann.map(a=>`<div class="card"><div class="row sp"><h3>${esc(a.judul)}</h3>${isAdm()?`<button class="d s" onclick="delAnn(${a.id})">Hapus</button>`:''}</div><p>${esc(a.isi)}</p><span class="mut">${esc(a.tgl)}</span></div>`).join('')||'<p class="mut">Belum ada pengumuman.</p>'}`;
+}
+function addAnn(){const j=val('ij').trim(),i=val('ii').trim();if(!j||!i)return note('Isi judul dan isi pengumuman.');S.ann.unshift({id:id(),judul:j,isi:i,tgl:today()});save();note('Pengumuman terbit.')}
+function delAnn(x){S.ann=S.ann.filter(a=>a.id!==x);save();note('Pengumuman dihapus.')}
+
+function kas(){
+ const sal=S.kas.reduce((s,k)=>s+(k.jenis==='masuk'?k.jml:-k.jml),0);
+ const ls=S.iuran[BULAN]||[];
+ const aktif=S.users.filter(u=>u.status==='aktif'&&u.role==='warga');
+ return `<h2>Kas dan iuran</h2><div class="card"><span class="mut">Saldo total (semua kategori)</span><h1>${rp(sal)}</h1></div>
+ <div class="row">${KAT.map(n=>`<div class="card stat"><span class="mut">${n}</span><b class="${katSaldo(n)<0?'bad':''}" style="font-size:20px">${rp(katSaldo(n))}</b></div>`).join('')}</div>
+ <h2>Iuran ${BULAN} (${rp(S.nominal)})</h2>
+ ${aktif.map(u=>{const l=ls.includes(u.id);return `<div class="card row sp"><div>${esc(u.nama)}<br><span class="mut">Blok ${esc(u.blok)}</span></div>
+ <div class="row"><span class="tag ${l?'ok':'bad'}">${l?'Lunas':'Belum'}</span>${isAdm()?`<button class="g s" onclick="togIuran(${u.id})">${l?'Batalkan':'Tandai lunas'}</button>`:''}</div></div>`}).join('')}
+ ${isAdm()?`<div class="card"><h3>Catat pemasukan / pengeluaran</h3><select id="kc" aria-label="Kategori">${KAT.map(n=>`<option>${n}</option>`).join('')}</select><input id="kk" placeholder="Keterangan"><input id="kj" type="number" inputmode="numeric" placeholder="Jumlah (Rp)"><select id="kt"><option value="masuk">Pemasukan</option><option value="keluar">Pengeluaran</option></select><button onclick="addKas()">Simpan transaksi</button></div>`:''}
+ <h2>Riwayat</h2>${S.kas.slice().reverse().map(k=>`<div class="card row sp"><div>${esc(k.ket)}<br><span class="tag">${esc(k.kat||'Kas')}</span> <span class="mut">${esc(k.tgl)}</span></div><b class="${k.jenis==='masuk'?'ok':'bad'}">${k.jenis==='masuk'?'+':'-'}${rp(k.jml)}</b></div>`).join('')}`;
+}
+function togIuran(u){const l=S.iuran[BULAN]=S.iuran[BULAN]||[];const i=l.indexOf(u);i<0?l.push(u):l.splice(i,1);save();draw()}
+function addKas(){const k=val('kk').trim(),j=+val('kj');if(!k||!(j>0))return note('Isi keterangan dan jumlah lebih dari 0.');const kt=val('kc'),jn=val('kt');if(jn==='keluar'&&j>katSaldo(kt))return note('Saldo '+kt+' hanya '+rp(katSaldo(kt))+'. Pengeluaran melebihi saldo kategori.');S.kas.push({id:id(),tgl:today(),kat:kt,ket:k,jenis:jn,jml:j});save();note('Transaksi disimpan.')}
+
+function ronda(){
+ const aktif=S.users.filter(u=>u.status==='aktif'&&u.role!=='x');
+ return `<h2>Jadwal ronda</h2>${HARI.map(h=>`<div class="card"><div class="hari">${h}</div>
+ ${(S.ronda[h]||[]).map(u=>`<span class="chip">${esc(nm(u))}${isAdm()?`<button aria-label="Hapus" onclick="rmRonda('${h}',${u})">×</button>`:''}</span>`).join('')||'<span class="mut">Belum ada petugas</span>'}
+ ${isAdm()?`<div class="row" style="margin-top:6px"><select id="r-${h}" style="flex:1">${aktif.map(u=>`<option value="${u.id}">${esc(u.nama)}</option>`).join('')}</select><button class="g s" onclick="addRonda('${h}')">Tambah</button></div>`:''}</div>`).join('')}`;
+}
+function addRonda(h){const u=+val('r-'+h);const l=S.ronda[h];if(!l.includes(u))l.push(u);save();draw()}
+function rmRonda(h,u){S.ronda[h]=S.ronda[h].filter(x=>x!==u);save();draw()}
+
+function aduan(){
+ const list=isAdm()?S.aduan:S.aduan.filter(a=>a.uid===me.id);
+ return `<h2>Pengaduan warga</h2>
+ <div class="card"><h3>Sampaikan pengaduan</h3><input id="aj" placeholder="Judul singkat"><textarea id="ai" placeholder="Ceritakan masalahnya"></textarea><button onclick="addAduan()">Kirim pengaduan</button></div>
+ ${list.slice().reverse().map(a=>`<div class="card"><div class="row sp"><h3>${esc(a.judul)}</h3><span class="tag">${a.status}</span></div><p>${esc(a.isi)}</p><span class="mut">${esc(nm(a.uid))} · ${esc(a.tgl)}</span>
+ ${isAdm()?`<div class="row" style="margin-top:6px">${['Baru','Diproses','Selesai'].map(s=>`<button class="${a.status===s?'':'g'} s" onclick="setAduan(${a.id},'${s}')">${s}</button>`).join('')}</div>`:''}</div>`).join('')||'<p class="mut">Belum ada pengaduan.</p>'}`;
+}
+function addAduan(){const j=val('aj').trim(),i=val('ai').trim();if(!j||!i)return note('Isi judul dan cerita pengaduan.');S.aduan.push({id:id(),uid:me.id,judul:j,isi:i,status:'Baru',tgl:today()});save();note('Pengaduan terkirim.')}
+function setAduan(x,s){S.aduan.find(a=>a.id===x).status=s;save();draw()}
+
+/* CCTV */
+let camTimers=[];
+function cctv(){
+ return `<h2>CCTV live</h2><p class="mut">Uji tiap kamera dengan tombol Uji koneksi sebelum dipakai warga.</p>
+ ${S.cams.map(c=>`<div class="card"><div class="row sp"><h3>${esc(c.nama)}</h3><span class="tag" id="cs${c.id}">${camState[c.id]||'Belum diuji'}</span></div>
+ ${c.url==='demo'?`<canvas class="cam" id="cv${c.id}" width="640" height="360"></canvas>`:`<img class="cam" id="im${c.id}" alt="${esc(c.nama)}" src="${esc(c.url)}" onload="camSet(${c.id},'Terhubung')" onerror="camSet(${c.id},'Gagal tersambung')">`}
+ <div class="row" style="margin-top:8px"><button class="g s" onclick="testCam(${c.id})">Uji koneksi</button>${isAdm()&&c.url!=='demo'?`<button class="d s" onclick="delCam(${c.id})">Hapus</button>`:''}</div></div>`).join('')}
+ ${isAdm()?`<div class="card"><h3>Tambah kamera</h3><input id="cn" placeholder="Nama (mis. Gerbang depan)"><input id="cu" placeholder="Alamat gambar/stream MJPEG (https://...)"><button onclick="addCam()">Tambah kamera</button></div>`:''}`;
+}
+function camSet(i,s){camState[i]=s;const e=document.getElementById('cs'+i);if(e){e.textContent=s;e.className='tag '+(s==='Terhubung'?'ok':'bad')}}
+function testCam(i){
+ const c=S.cams.find(x=>x.id===i);
+ if(c.url==='demo'){camSet(i,'Terhubung');return}
+ camSet(i,'Menguji...');const im=new Image();let done=false;
+ const t=setTimeout(()=>{if(!done){done=true;camSet(i,'Gagal tersambung')}},6000);
+ im.onload=()=>{if(!done){done=true;clearTimeout(t);camSet(i,'Terhubung')}};
+ im.onerror=()=>{if(!done){done=true;clearTimeout(t);camSet(i,'Gagal tersambung')}};
+ im.src=c.url+(c.url.includes('?')?'&':'?')+'t='+Date.now();
+}
+function addCam(){const n=val('cn').trim(),u=val('cu').trim();if(!n||!/^https:\/\//.test(u))return note('Isi nama dan alamat yang diawali https://');S.cams.push({id:id(),nama:n,url:u});save();note('Kamera ditambahkan.')}
+function delCam(x){S.cams=S.cams.filter(c=>c.id!==x);save();draw()}
+function startCams(){
+ camTimers.forEach(clearInterval);camTimers=[];
+ S.cams.filter(c=>c.url==='demo').forEach(c=>{
+  const cv=document.getElementById('cv'+c.id);if(!cv)return;const g=cv.getContext('2d');let f=0;
+  const paint=()=>{f++;g.fillStyle='#0b1210';g.fillRect(0,0,640,360);
+   g.strokeStyle='#1d3a33';for(let x=0;x<640;x+=40){g.beginPath();g.moveTo(x,0);g.lineTo(x,360);g.stroke()}
+   g.fillStyle='#2DD4BF';g.beginPath();g.arc(80+(f*6)%480,200,14,0,7);g.fill();
+   g.fillStyle='#fff';g.font='20px sans-serif';g.fillText('SIMULASI '+new Date().toLocaleTimeString('id-ID'),16,30);
+   if(f%2)g.fillStyle='#ef4444',g.beginPath(),g.arc(610,24,7,0,7),g.fill()};
+  paint();camTimers.push(setInterval(paint,500));
+ });
+}
+
+/* Dompet, iuran, UMKM */
+const IC={pesanan:'📦',chat:'✉️',notif:'🔔',beranda:'🏠',info:'📢',kas:'💰',dompet:'👛','Bayar iuran':'🧾',umkm:'🛍️',toko:'🏪',ronda:'🌙',aduan:'💬',cctv:'📹',warga:'👥',profil:'🙂',trx:'🔁',admin:'📊'};
+const IURAN=[['Uang sampah',15000],['Uang kematian',5000],['Kas',5000],['Uang agustusan',5000]];
+const KATMAP={'Uang sampah':'Uang sampah','Uang kematian':'Dana kematian','Kas':'Kas','Uang agustusan':'Uang agustusan'};
+const IURAN_TOTAL=30000;
+const LBL={isi:'Isi saldo',kurang:'Pengurangan saldo',iuran:'Iuran',beli:'Belanja',jual:'Penjualan',refund:'Pengembalian dana',tarik:'Penarikan saldo'};
+const plus=j=>j==='isi'||j==='jual'||j==='refund';
+const usr=i=>S.users.find(u=>u.id===i);
+const canTopup=()=>me&&(me.role==='super'||(me.role==='admin'&&['bendahara','humas'].includes(me.jabatan)));
+const roleLabel=u=>u.role==='super'?'Super Admin':u.role==='admin'?('Admin'+(u.jabatan?' '+u.jabatan:'')):'Warga';
+function addTrx(uid,jenis,ket,jml){S.trx.unshift({id:id(),tgl:today(),uid:uid,jenis:jenis,ket:ket,jml:jml,oleh:me?me.id:0})}
+function setJabatan(u,j){if(!isSup())return;const x=usr(u);x.jabatan=j;save();note(j?x.nama+' kini '+j+'.':'Jabatan '+x.nama+' dilepas.')}
+function trxList(l,showName){return l.slice(0,60).map(t=>`<div class="card row sp"><div>${showName?esc(nm(t.uid))+' · ':''}${LBL[t.jenis]}<br><span class="mut">${esc(t.ket)} · ${esc(t.tgl)}${(t.jenis==='isi'||t.jenis==='kurang')&&t.oleh?' · oleh <b>'+esc(nm(t.oleh))+'</b>':''}</span></div><b class="${plus(t.jenis)?'ok':'bad'}">${plus(t.jenis)?'+':'-'}${rp(t.jml)}</b></div>`).join('')||'<p class="mut">Belum ada transaksi.</p>'}
+function dompet(){
+ const lunas=(S.iuran[BULAN]||[]).includes(me.id);
+ const aktif=S.users.filter(u=>u.status==='aktif');
+ const petugas=aktif.filter(u=>u.role==='super'||(u.role==='admin'&&['bendahara','humas'].includes(u.jabatan)));
+ const mine=(S.topupReq||[]).filter(r=>r.uid===me.id).slice(-4).reverse();
+ const pend=(S.topupReq||[]).filter(r=>r.status==='menunggu');
+ const pf='<input id="pn1" type="password" inputmode="numeric" maxlength="6" placeholder="PIN baru (6 angka)"><input id="pn2" type="password" inputmode="numeric" maxlength="6" placeholder="Ulangi PIN">';
+ const pinCard=me.pin?`<details class="card"><summary><b>PIN keamanan</b> · aktif (ketuk untuk ubah)</summary><input id="pn0" type="password" inputmode="numeric" maxlength="6" placeholder="PIN lama">${pf}<button onclick="setPin()">Ubah PIN</button></details>`:`<div class="card" style="border-color:var(--acc)"><h3>Buat PIN keamanan</h3><p class="mut">PIN 6 angka wajib untuk bayar iuran, belanja, dan semua transaksi saldo.</p>${pf}<button onclick="setPin()">Simpan PIN</button></div>`;
+ return `<h2>Dompet saya</h2><div class="card"><span class="mut">Saldo</span><h1>${rp(me.saldo)}</h1><p class="mut">Saldo hanya bisa dipakai di dalam aplikasi: bayar iuran dan belanja UMKM.</p></div>
+ ${pinCard}
+ <h2>Isi saldo</h2><div class="card"><p class="mut">Setor tunai ke bendahara atau humas, lalu ajukan di sini. Saldo masuk setelah mereka menerima.</p>
+ <div class="row">${[20000,50000,100000,200000].map(n=>`<button class="g s" onclick="document.getElementById('rq').value=${n}">${rp(n)}</button>`).join('')}</div>
+ <input id="rq" type="number" inputmode="numeric" placeholder="Jumlah (Rp)"><button onclick="ajukanTopup()">Ajukan isi saldo</button>
+ <p class="mut" style="margin-bottom:0">Setor ke: ${petugas.map(u=>esc(u.nama)+(u.jabatan?' ('+u.jabatan+')':'')+' '+esc(u.hp)).join(' · ')||'belum ada petugas'}</p></div>
+ ${mine.map(r=>`<div class="card row sp"><div>Permintaan ${rp(r.jml)}<br><span class="mut">${esc(r.tgl)}</span></div><span class="tag ${r.status==='selesai'?'ok':r.status==='ditolak'?'bad':''}">${r.status}</span></div>`).join('')}
+ <h2>Iuran bulanan ${BULAN}</h2><div class="card">${IURAN.map(i=>`<div class="row sp"><span>${i[0]}</span><b>${rp(i[1])}</b></div>`).join('')}<div class="row sp" style="border-top:1px solid var(--line);margin-top:6px;padding-top:6px"><b>Total</b><b>${rp(IURAN_TOTAL)}</b></div>
+ ${lunas?'<p class="ok"><b>Iuran bulan ini sudah lunas.</b></p>':`<button style="margin-top:8px" onclick="bayarIuran()">Bayar ${rp(IURAN_TOTAL)} dari saldo</button>`}</div>
+ ${canTopup()?`<h2>Permintaan isi saldo warga</h2>${pend.map(r=>`<div class="card"><b>${esc(nm(r.uid))}</b> minta ${rp(r.jml)}<div class="row" style="margin-top:8px"><button class="s" onclick="terimaTopup(${r.id})">Terima tunai</button><button class="d s" onclick="tolakTopup(${r.id})">Tolak</button></div></div>`).join('')||'<p class="mut">Tidak ada permintaan.</p>'}
+ <h2>Permintaan tarik saldo toko</h2>${(S.tarik||[]).filter(r=>r.status==='menunggu').map(r=>`<div class="card"><b>${esc(nm(r.uid))}</b> tarik ${rp(r.jml)}<br><span class="mut">${esc(r.metode)}${r.catatan?' \u00b7 '+esc(r.catatan):''}</span><div class="row" style="margin-top:8px"><button class="s" onclick="konfirmTarik(${r.id})">Sudah dibayarkan</button><button class="d s" onclick="tolakTarik(${r.id})">Tolak</button></div></div>`).join('')||'<p class="mut">Tidak ada permintaan tarik saldo.</p>'}
+ <h2>Isi saldo manual</h2><div class="card"><select id="ts" aria-label="Warga">${aktif.map(u=>`<option value="${u.id}">${esc(u.nama)} (${rp(u.saldo||0)})</option>`).join('')}</select><input id="tj" type="number" inputmode="numeric" placeholder="Jumlah (Rp)"><input id="tk" placeholder="Keterangan (wajib untuk pengurangan)"><div class="row"><button onclick="topup(1)">Isi saldo</button>${isSup()?'<button class="d" onclick="topup(-1)">Kurangi saldo</button>':''}</div><p class="mut">Setiap pengisian dan pengurangan tercatat atas nama Anda dan terlihat oleh Super Admin. Admin tidak bisa mengisi saldo sendiri.</p></div>`:''}
+ <h2>Riwayat saldo</h2>${trxList(S.trx.filter(t=>t.uid===me.id),false)}`;
+}
+let pinTry=0,pinLock=0;
+function askPin(t){return new Promise(res=>{
+ const d=document.createElement('div');
+ d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:grid;place-items:center;padding:16px';
+ d.innerHTML=`<div class="card" style="width:100%;max-width:340px;margin:0"><h3>${esc(t||'Masukkan PIN')}</h3><input id="pinin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="6 angka" style="text-align:center;font-size:22px;letter-spacing:6px"><div class="row" style="margin-top:8px"><button id="pinok">Konfirmasi</button><button class="g" id="pinx">Batal</button></div></div>`;
+ document.body.appendChild(d);const i=d.querySelector('#pinin');i.focus();
+ const done=v=>{d.remove();res(v)};
+ d.querySelector('#pinx').onclick=()=>done(false);
+ d.querySelector('#pinok').onclick=()=>done(i.value);
+ i.onkeydown=e=>{if(e.key==='Enter')done(i.value)};
+})}
+async function needPin(t){
+ if(!me.pin){go('dompet');note('Buat PIN keamanan dulu di tab Dompet.');return false}
+ if(Date.now()<pinLock){note('PIN terkunci sementara. Coba lagi beberapa menit.');return false}
+ const p=await askPin(t);if(p===false)return false;
+ if(await H(me.hp,'pin:'+p)===me.pin){pinTry=0;return true}
+ if(++pinTry>=5){pinLock=Date.now()+300000;pinTry=0;note('PIN salah 5 kali. Terkunci 5 menit.')}else note('PIN salah.');
+ return false}
+async function setPin(){
+ const a=val('pn1'),b=val('pn2');
+ if(!/^\d{6}$/.test(a))return note('PIN harus 6 angka.');
+ if(a!==b)return note('Konfirmasi PIN tidak sama.');
+ if(me.pin&&(await H(me.hp,'pin:'+val('pn0')))!==me.pin)return note('PIN lama salah.');
+ me.pin=await H(me.hp,'pin:'+a);save();note('PIN tersimpan.');
+}
+function resetPin(u){if(!isSup())return;const x=usr(u);if(!x)return;x.pin='';save();note('PIN '+x.nama+' direset. Minta ia membuat PIN baru.')}
+async function bayarIuran(){
+ if(!await needPin('PIN untuk bayar iuran'))return;
+ const l=S.iuran[BULAN]=S.iuran[BULAN]||[];
+ if(l.includes(me.id))return note('Iuran bulan ini sudah lunas.');
+ if((me.saldo||0)<IURAN_TOTAL)return note('Saldo kurang '+rp(IURAN_TOTAL-(me.saldo||0))+'. Isi saldo dulu.');
+ me.saldo-=IURAN_TOTAL;l.push(me.id);
+ IURAN.forEach(i=>S.kas.push({id:id(),tgl:today(),kat:KATMAP[i[0]],ket:'Iuran '+BULAN+' - '+me.nama,jenis:'masuk',jml:i[1]}));
+ addTrx(me.id,'iuran','Iuran bulanan '+BULAN,IURAN_TOTAL);save();note('Iuran lunas. Saldo terpotong dan masuk ke kas RT.');
+}
+function ajukanTopup(){
+ const j=+val('rq');if(!(j>=1000))return note('Isi jumlah minimal Rp1.000.');
+ S.topupReq.push({id:id(),uid:me.id,jml:j,status:'menunggu',tgl:today(),oleh:0});save();note('Permintaan terkirim. Setor tunai ke bendahara atau humas.');
+}
+async function terimaTopup(rid){
+ if(!canTopup())return;
+ if(!await needPin('PIN untuk menerima setoran'))return;
+ const r=S.topupReq.find(x=>x.id===rid);if(!r||r.status!=='menunggu')return note('Permintaan sudah diproses.');
+ const u=usr(r.uid);if(!u)return;
+ if(u.id===me.id&&me.role!=='super')return note('Admin tidak boleh mengisi saldo sendiri.');
+ u.saldo=(u.saldo||0)+r.jml;r.status='selesai';r.oleh=me.id;
+ addTrx(u.id,'isi','Setor tunai (permintaan #'+r.id+')',r.jml);save();note('Saldo '+u.nama+' bertambah '+rp(r.jml)+'.');
+}
+function tolakTopup(rid){if(!canTopup())return;const r=S.topupReq.find(x=>x.id===rid);if(!r||r.status!=='menunggu')return;r.status='ditolak';r.oleh=me.id;save();draw()}
+async function topup(s){
+ if(!canTopup()||(s<0&&!isSup()))return note('Anda tidak berhak melakukan ini.');
+ const j=+val('tj'),uid=+val('ts'),ket=val('tk').trim();
+ if(!usr(uid)||!(j>0))return note('Pilih warga dan isi jumlah lebih dari 0.');
+ if(s<0&&!ket)return note('Isi keterangan alasan pengurangan saldo.');
+ if(uid===me.id&&me.role!=='super')return note('Admin tidak boleh mengisi saldo sendiri.');
+ if(!await needPin(s>0?'PIN untuk isi saldo':'PIN untuk kurangi saldo'))return;
+ const u=usr(uid);if(!u)return;
+ if(s<0&&(u.saldo||0)<j)return note('Saldo '+u.nama+' hanya '+rp(u.saldo||0)+'.');
+ u.saldo=(u.saldo||0)+s*j;
+ addTrx(u.id,s>0?'isi':'kurang',ket||'Isi saldo',j);save();note('Saldo '+u.nama+' sekarang '+rp(u.saldo)+'.');
+}
+function trxView(){
+ if(!isAdm())return '<p class="mut">Hanya admin yang bisa melihat semua transaksi.</p>';
+ const tot=S.users.reduce((s,u)=>s+(u.saldo||0),0);
+ let rekap='';
+ if(isSup()){const m={};S.trx.filter(t=>t.jenis==='isi'||t.jenis==='kurang').forEach(t=>{const k=t.oleh;m[k]=m[k]||{i:0,k:0,n:0};m[k].n++;if(t.jenis==='isi')m[k].i+=t.jml;else m[k].k+=t.jml});
+  rekap=`<h2>Rekap isi saldo per admin</h2>${Object.keys(m).map(k=>`<div class="card"><h3>${esc(nm(+k))}</h3><span class="mut">${m[k].n} transaksi</span><div class="row sp"><span>Total diisi</span><b class="ok">${rp(m[k].i)}</b></div><div class="row sp"><span>Total dikurangi</span><b class="bad">${rp(m[k].k)}</b></div></div>`).join('')||'<p class="mut">Belum ada pengisian saldo.</p>'}`}
+ return `<h2>Semua transaksi</h2><div class="card"><span class="mut">Total saldo warga</span><h1>${rp(tot)}</h1></div>${rekap}<h2>Penarikan saldo toko</h2>${S.tarik.slice().reverse().slice(0,30).map(r=>`<div class="card row sp"><div>${esc(nm(r.uid))} \u00b7 ${rp(r.jml)}<br><span class="mut">${esc(r.metode)} \u00b7 ${esc(r.tgl)}${r.oleh?' \u00b7 oleh '+esc(nm(r.oleh)):''}</span></div><span class="tag ${r.status==='selesai'?'ok':r.status==='ditolak'?'bad':''}">${r.status}</span></div>`).join('')||'<p class="mut">Belum ada penarikan.</p>'}<h2>Riwayat lengkap</h2>${trxList(S.trx,true)}`;
+}
+let UM={pid:null,qty:1,metode:'ambil',co:false,alamat:null,cat:''};
+const ORD={baru:'Menunggu toko',diproses:'Diproses',selesai:'Selesai',batal:'Dibatalkan'};
+function kirimChat(room,text){if(!CLOUD||!window.firebase)return;firebase.firestore().collection('chat').add({room:room,from:me.id,nama:me.nama,rl:roleLabel(me),text:text,ts:Date.now()}).catch(()=>{})}
+function umkm(){
+ if(UM.pid){const p=S.produk.find(x=>x.id===UM.pid);if(p)return UM.co?checkoutView(p):detailView(p);UM.pid=null;UM.co=false}
+ const ps=S.produk.filter(p=>{const t=S.toko.find(x=>x.id===p.tid);return t&&usr(t.uid)});
+ return `<h2>UMKM warga</h2><p class="mut">Saldo Anda: <b>${rp(me.saldo)}</b>. Ketuk produk untuk melihat detail.</p>
+ <div class="grid">${ps.map(p=>{const t=S.toko.find(x=>x.id===p.tid);return `<button class="pcard" onclick="openProduk(${p.id})">${p.foto?`<img class="ph" data-pid="${p.id}" alt="${esc(p.nama)}">`:'<div class="ph">🛍️</div>'}<div class="pb"><b>${esc(p.nama)}</b><br><span class="ok"><b>${rp(p.harga)}</b></span><br><span class="mut">${esc(t.nama)} \u00b7 terjual ${p.terjual||0}${p.stok<1?' \u00b7 habis':''}</span></div></button>`}).join('')||'<p class="mut">Belum ada produk.</p>'}</div>`;
+}
+function openProduk(pid){UM.pid=pid;UM.qty=1;UM.co=false;UM.metode='ambil';UM.alamat=null;UM.cat='';draw();window.scrollTo(0,0)}
+function closeProduk(){UM.pid=null;UM.co=false;draw()}
+function ubahQty(d){const p=S.produk.find(x=>x.id===UM.pid);if(!p)return;UM.qty=Math.min(Math.max(1,UM.qty+d),Math.max(1,p.stok));draw()}
+function setMetode(m){const a=val('coal');if(a)UM.alamat=a;UM.cat=val('cocat');UM.metode=m;draw()}
+function detailView(p){
+ const t=S.toko.find(x=>x.id===p.tid)||{},own=t.uid===me.id;
+ return `<button class="g s" style="margin-top:8px" onclick="closeProduk()">\u2190 Kembali</button>
+ ${p.foto?`<img class="big" data-pid="${p.id}" alt="${esc(p.nama)}">`:'<div class="big">🛍️</div>'}
+ <h2 style="margin-bottom:4px">${esc(p.nama)}</h2><div style="font-size:24px;font-weight:800;color:var(--pri)">${rp(p.harga)}</div>
+ <div class="row mut" style="margin:6px 0"><span>Terjual ${p.terjual||0}</span><span>\u00b7</span><span>Stok ${p.stok}</span></div>
+ <div class="card"><h3>Deskripsi</h3><p style="margin:6px 0 0;white-space:pre-wrap">${esc(p.desk||'Penjual belum menambahkan deskripsi.')}</p></div>
+ <div class="card"><h3>${esc(t.nama)}</h3><span class="mut">Penjual: ${esc(nm(t.uid))}</span><p class="mut" style="margin:6px 0 0">📍 ${esc(t.alamat||'Alamat belum diisi')}</p>
+ <p class="mut" style="margin:4px 0 0">${t.antar?'🛵 Bisa diantar ke rumah, ongkir '+rp(t.ongkir||0)+(t.kurir?' (kurir: '+esc(t.kurir)+')':''):'Ambil sendiri di warung'}</p></div>
+ ${own?'<p class="mut">Ini produk toko Anda.</p>':p.stok<1?'<p class="bad"><b>Stok habis</b></p>':`<div class="card row sp"><b>Jumlah</b><div class="row"><button class="g s" onclick="ubahQty(-1)">\u2212</button><b>${UM.qty}</b><button class="g s" onclick="ubahQty(1)">+</button></div></div><button style="width:100%" onclick="UM.co=true;draw()">Beli sekarang</button>`}`;
+}
+function checkoutView(p){
+ const t=S.toko.find(x=>x.id===p.tid)||{};
+ if(UM.metode==='antar'&&!t.antar)UM.metode='ambil';
+ const ong=UM.metode==='antar'?(t.ongkir||0):0,sub=p.harga*UM.qty,tot=sub+ong;
+ return `<button class="g s" style="margin-top:8px" onclick="UM.co=false;draw()">\u2190 Kembali</button><h2>Checkout</h2>
+ <div class="card"><b>${esc(p.nama)}</b> \u00d7 ${UM.qty}<br><span class="mut">${esc(t.nama)}</span></div>
+ <div class="card"><h3>Cara menerima</h3><div class="row" style="margin-top:8px"><button class="${UM.metode==='ambil'?'':'g'}" onclick="setMetode('ambil')">Ambil sendiri</button>${t.antar?`<button class="${UM.metode==='antar'?'':'g'}" onclick="setMetode('antar')">Diantar</button>`:''}</div>
+ ${UM.metode==='ambil'?`<p class="mut" style="margin:8px 0 0">Ambil di: ${esc(t.alamat||'warung penjual')}</p>`:`<label>Alamat pengantaran<textarea id="coal">${esc(UM.alamat!=null?UM.alamat:(me.alamat||('Blok '+(me.blok||''))))}</textarea></label>`}
+ <label>Catatan untuk penjual (opsional)<input id="cocat" value="${esc(UM.cat||'')}"></label></div>
+ <div class="card"><div class="row sp"><span>Subtotal</span><b>${rp(sub)}</b></div><div class="row sp"><span>Ongkir${t.kurir&&ong?' ('+esc(t.kurir)+')':''}</span><b>${rp(ong)}</b></div><div class="row sp" style="border-top:1px solid var(--line);margin-top:6px;padding-top:6px"><b>Total</b><b>${rp(tot)}</b></div><p class="mut" style="margin:8px 0 0">Saldo Anda ${rp(me.saldo)}. Dana ditahan dan baru diterima penjual setelah pesanan selesai.</p></div>
+ <button style="width:100%" onclick="placeOrder()">Bayar dengan saldo (PIN)</button>`;
+}
+async function placeOrder(){
+ const pid=UM.pid,q=UM.qty,metode=UM.metode,alamat=val('coal').trim(),cat=val('cocat').trim();
+ const p0=S.produk.find(x=>x.id===pid),t0=p0&&S.toko.find(x=>x.id===p0.tid);
+ if(!p0||!t0)return note('Produk tidak tersedia.');
+ if(metode==='antar'&&!alamat)return note('Isi alamat pengantaran.');
+ if(!await needPin('PIN untuk membayar'))return;
+ const p=S.produk.find(x=>x.id===pid),t=p&&S.toko.find(x=>x.id===p.tid),s=t&&usr(t.uid);
+ if(!p||!s)return note('Produk tidak tersedia.');
+ if(s.id===me.id)return note('Tidak bisa membeli produk sendiri.');
+ if(p.stok<q)return note('Stok tidak cukup.');
+ const ong=metode==='antar'&&t.antar?(t.ongkir||0):0,tot=p.harga*q+ong;
+ if((me.saldo||0)<tot)return note('Saldo kurang '+rp(tot-(me.saldo||0))+'. Isi saldo dulu.');
+ me.saldo-=tot;p.stok-=q;
+ const o={id:id(),buyer:me.id,tid:t.id,seller:s.id,pid:p.id,nama:p.nama,harga:p.harga,qty:q,sub:p.harga*q,ongkir:ong,total:tot,metode:metode,alamat:metode==='antar'?alamat:(t.alamat||''),cat:cat,status:'baru',tgl:today(),ts:Date.now()};
+ S.orders.push(o);if(metode==='antar'&&!me.alamat)me.alamat=alamat;
+ addTrx(me.id,'beli','Pesanan #'+o.id+' '+p.nama+' (dana ditahan sampai selesai)',tot);
+ UM.pid=null;UM.co=false;UM.qty=1;tab='pesanan';save();note('Pesanan dibuat. Dana ditahan sampai pesanan selesai.');
+}
+function setOrder(oid,st){
+ const o=S.orders.find(x=>x.id===oid);if(!o)return;
+ const mine=o.seller===me.id,byr=o.buyer===me.id;
+ if(st==='diproses'&&mine&&o.status==='baru')o.status='diproses';
+ else if(st==='selesai'&&mine&&o.status==='diproses'){
+  o.status='selesai';const s=usr(o.seller);if(s)s.saldo=(s.saldo||0)+o.total;
+  const p=S.produk.find(x=>x.id===o.pid);if(p)p.terjual=(p.terjual||0)+o.qty;
+  addTrx(o.seller,'jual','Pesanan #'+o.id+' '+o.nama+' ke '+nm(o.buyer),o.total);
+ }else if(st==='batal'&&((mine&&(o.status==='baru'||o.status==='diproses'))||(byr&&o.status==='baru'))){
+  o.status='batal';const b=usr(o.buyer);if(b)b.saldo=(b.saldo||0)+o.total;
+  const p=S.produk.find(x=>x.id===o.pid);if(p)p.stok+=o.qty;
+  addTrx(o.buyer,'refund','Pesanan #'+o.id+' dibatalkan',o.total);
+ }else return note('Aksi tidak tersedia untuk pesanan ini.');
+ save();draw();
+}
+function ordCard(o,sellerView){
+ const b=usr(o.buyer),t=S.toko.find(x=>x.id===o.tid)||{};
+ return `<div class="card"><div class="row sp"><b>#${o.id} \u00b7 ${esc(o.nama)} \u00d7 ${o.qty}</b><span class="tag ${o.status==='selesai'?'ok':o.status==='batal'?'bad':''}">${ORD[o.status]}</span></div>
+ <span class="mut">${esc(o.tgl)} \u00b7 ${sellerView?'Pembeli: '+esc(nm(o.buyer))+(b?' (Blok '+esc(b.blok||'-')+', '+esc(b.hp)+')':''):'Toko: '+esc(t.nama||'-')}</span>
+ <div style="margin-top:6px">${o.metode==='antar'?'🛵 Diantar ke: '+esc(o.alamat):'🚶 Ambil sendiri di: '+esc(o.alamat||'warung')}</div>
+ ${o.cat?`<div class="mut">Catatan: ${esc(o.cat)}</div>`:''}
+ <div class="row sp" style="margin-top:6px"><span class="mut">Subtotal ${rp(o.sub)}${o.ongkir?' + ongkir '+rp(o.ongkir):''}</span><b>${rp(o.total)}</b></div>
+ <div class="row" style="margin-top:8px">${sellerView?(o.status==='baru'?`<button class="s" onclick="setOrder(${o.id},'diproses')">Proses pesanan</button><button class="d s" onclick="setOrder(${o.id},'batal')">Tolak</button>`:o.status==='diproses'?`<button class="s" onclick="setOrder(${o.id},'selesai')">Tandai selesai</button><button class="d s" onclick="setOrder(${o.id},'batal')">Batalkan</button>`:''):(o.status==='baru'?`<button class="d s" onclick="setOrder(${o.id},'batal')">Batalkan pesanan</button>`:'')}</div></div>`;
+}
+function pesanan(){
+ const my=S.orders.filter(o=>o.buyer===me.id).sort((a,b)=>b.ts-a.ts);
+ return `<h2>Pesanan saya</h2>${my.map(o=>ordCard(o,false)).join('')||'<p class="mut">Belum ada pesanan. Belanja dulu di tab UMKM.</p>'}`;
+}
+async function ajukanTarik(){
+ const j=+val('tw'),mt=val('twm'),cat=val('twc').trim();
+ if(!(j>=10000))return note('Minimal penarikan Rp10.000.');
+ if(mt==='Transfer bank'&&!cat)return note('Isi nomor rekening dan nama bank.');
+ if(!await needPin('PIN untuk tarik saldo'))return;
+ if((me.saldo||0)<j)return note('Saldo tidak cukup.');
+ const r={id:id(),uid:me.id,jml:j,metode:mt,catatan:cat,status:'menunggu',tgl:today(),oleh:0};
+ me.saldo-=j;S.tarik.push(r);addTrx(me.id,'tarik','Penarikan #'+r.id+' (ditahan, menunggu admin)',j);save();
+ kirimChat(me.id,'Permintaan tarik saldo #'+r.id+': '+rp(j)+' via '+mt+(cat?' ('+cat+')':'')+'. Mohon diproses.');
+ note('Permintaan tarik saldo terkirim dan otomatis masuk ke chat admin.');
+}
+async function konfirmTarik(rid){
+ if(!canTopup())return;
+ if(!await needPin('PIN untuk konfirmasi penarikan'))return;
+ const r=S.tarik.find(x=>x.id===rid);if(!r||r.status!=='menunggu')return note('Permintaan sudah diproses.');
+ if(r.uid===me.id&&me.role!=='super')return note('Admin tidak boleh memproses penarikan sendiri.');
+ r.status='selesai';r.oleh=me.id;save();
+ kirimChat(r.uid,'Penarikan #'+r.id+' sebesar '+rp(r.jml)+' sudah dikonfirmasi oleh '+me.nama+'.');
+ note('Penarikan dikonfirmasi dan pemilik toko diberi tahu lewat chat.');
+}
+async function tolakTarik(rid){
+ if(!canTopup())return;
+ if(!await needPin('PIN untuk menolak penarikan'))return;
+ const r=S.tarik.find(x=>x.id===rid);if(!r||r.status!=='menunggu')return note('Permintaan sudah diproses.');
+ const u=usr(r.uid);if(u)u.saldo=(u.saldo||0)+r.jml;
+ r.status='ditolak';r.oleh=me.id;addTrx(r.uid,'refund','Penarikan #'+r.id+' ditolak',r.jml);save();
+ kirimChat(r.uid,'Penarikan #'+r.id+' ditolak oleh '+me.nama+'. Dana dikembalikan ke saldo.');
+ note('Penarikan ditolak dan dana dikembalikan.');
+}
+/* Foto produk: dikecilkan lalu disimpan di koleksi img */
+const IMGC={};
+function packImg(file){return new Promise((ok,no)=>{const r=new FileReader();r.onerror=no;r.onload=()=>{const im=new Image();im.onerror=no;im.onload=()=>{const k=Math.min(1,360/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);ok(c.toDataURL('image/jpeg',.7))};im.src=r.result};r.readAsDataURL(file)})}
+async function saveFoto(pid,file){
+ if(!file)return false;
+ if(!CLOUD){note('Foto butuh database online.');return false}
+ try{const d=await packImg(file);await firebase.firestore().collection('img').doc(String(pid)).set({d:d});IMGC[pid]=d;return true}
+ catch(e){note('Gagal mengunggah foto. Pastikan aturan database sudah diperbarui.');return false}
+}
+function loadImgs(){document.querySelectorAll('img[data-pid]').forEach(el=>{const p=el.dataset.pid;if(IMGC[p]){el.src=IMGC[p];return}if(!CLOUD||!window.firebase)return;firebase.firestore().collection('img').doc(p).get().then(d=>{if(d.exists){IMGC[p]=d.data().d;el.src=IMGC[p]}}).catch(()=>{})})}
+/* Chat administrator */
+let CHAT=[],chatUnsub=null,chatT0=0,chatRoom=null;
+function stopChat(){if(chatUnsub){chatUnsub();chatUnsub=null}CHAT=[];chatRoom=null}
+function startChat(){
+ if(!CLOUD||!me||chatUnsub||!window.firebase||!REF)return;
+ chatT0=Date.now();
+ const col=firebase.firestore().collection('chat');
+ const q=isAdm()?col.orderBy('ts').limitToLast(400):col.where('room','==',me.id);
+ chatUnsub=q.onSnapshot(sn=>{
+  sn.docChanges().forEach(ch=>{if(ch.type!=='added')return;const m=ch.doc.data();if(m.ts<=chatT0||m.from===me.id)return;
+   const viewing=tab==='chat'&&(!isAdm()||chatRoom===m.room);
+   if(!viewing)notify('Pesan dari '+m.nama,String(m.text).slice(0,80),'chat')});
+  CHAT=sn.docs.map(d=>d.data()).sort((a,b)=>a.ts-b.ts);
+  if(tab==='chat')renderChat();
+ },()=>{});
+}
+function msgsHtml(room){
+ return CHAT.filter(m=>m.room===room).map(m=>`<div class="bub ${m.from===me.id?'me':''}"><span class="mut">${esc(m.nama)}${m.rl&&m.rl!=='Warga'?' · '+esc(m.rl):''} · ${new Date(m.ts).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span><br>${esc(m.text)}</div>`).join('')||'<p class="mut">Belum ada pesan.</p>';
+}
+function chatForm(){return '<div class="row" style="margin-top:8px;flex-wrap:nowrap"><input id="ci" placeholder="Tulis pesan" maxlength="500" style="flex:1" onkeydown="if(event.key===\'Enter\')sendChat()"><button onclick="sendChat()">Kirim</button></div>'}
+function renderChat(){
+ const e=document.getElementById('msgs');
+ if(e){e.innerHTML=msgsHtml(chatRoom);e.scrollTop=e.scrollHeight;return}
+ const ae=document.activeElement;if(!(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)))draw();
+}
+function openRoom(r){chatRoom=r==='admin'?'admin':+r;draw()}
+function chat(){
+ if(!CLOUD)return '<p class="mut">Chat butuh database online.</p>';
+ if(!isAdm()){chatRoom=me.id;return `<h2>Chat dengan Administrator</h2><p class="mut">Pesan Anda dibaca pengurus RT. Untuk hal mendesak, hubungi langsung.</p><div class="card"><div class="msgs" id="msgs">${msgsHtml(me.id)}</div>${chatForm()}</div>`}
+ if(chatRoom==null){
+  const rooms={};CHAT.forEach(m=>{rooms[m.room]=m});
+  const keys=Object.keys(rooms).filter(k=>k!=='admin').sort((a,b)=>rooms[b].ts-rooms[a].ts);
+  const warga=S.users.filter(u=>u.status==='aktif'&&u.role==='warga');
+  return `<h2>Chat administrator</h2><button class="tile" style="width:100%;margin-bottom:8px" onclick="openRoom('admin')"><b>Grup Admin</b><br><span class="mut">${rooms.admin?esc(rooms.admin.nama+': '+rooms.admin.text).slice(0,60):'Khusus pengurus'}</span></button>
+  ${keys.map(k=>`<button class="tile" style="width:100%;margin-bottom:8px" onclick="openRoom('${k}')"><b>${esc(nm(+k))}</b><br><span class="mut">${esc(rooms[k].nama+': '+rooms[k].text).slice(0,60)}</span></button>`).join('')||'<p class="mut">Belum ada pesan dari warga.</p>'}
+  <div class="card"><h3>Mulai chat dengan warga</h3><select id="cw">${warga.map(u=>`<option value="${u.id}">${esc(u.nama)}</option>`).join('')}</select><button onclick="openRoom(val('cw'))">Buka</button></div>`;
+ }
+ return `<div class="row sp"><h2 style="margin:16px 0 8px">${chatRoom==='admin'?'Grup Admin':esc(nm(chatRoom))}</h2><button class="g s" onclick="chatRoom=null;draw()">Kembali</button></div><div class="card"><div class="msgs" id="msgs">${msgsHtml(chatRoom)}</div>${chatForm()}</div>`;
+}
+function sendChat(){
+ const t=val('ci').trim();const room=isAdm()?chatRoom:me.id;if(!t||room==null)return;
+ firebase.firestore().collection('chat').add({room:room,from:me.id,nama:me.nama,rl:roleLabel(me),text:t.slice(0,500),ts:Date.now()}).catch(()=>note('Gagal mengirim pesan. Periksa aturan database.'));
+ document.getElementById('ci').value='';
+}
+/* Notifikasi */
+let NOTIFS=[],unread=0;try{NOTIFS=JSON.parse(localStorage.getItem('hw2n'))||[]}catch(e){}
+function toast(m){const d=document.createElement('div');d.setAttribute('role','status');d.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:12px;right:12px;max-width:616px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:14px;z-index:60;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25)';d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),4500)}
+function notify(title,body,tb){
+ NOTIFS.unshift({t:title,b:body,tab:tb||'beranda',ts:Date.now()});NOTIFS=NOTIFS.slice(0,40);unread++;
+ try{localStorage.setItem('hw2n',JSON.stringify(NOTIFS))}catch(e){}
+ toast(title+(body?': '+body:''));
+ try{if('Notification' in window&&Notification.permission==='granted'&&document.hidden){navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body:body,icon:'icon-192.png',tag:tb||'hw'}))}}catch(e){}
+ const e=document.getElementById('bellc');if(e){e.textContent=unread;e.style.display='inline-block'}
+}
+function askNotif(){try{Notification.requestPermission().then(()=>draw())}catch(e){note('Browser tidak mendukung notifikasi.')}}
+function notif(){
+ unread=0;
+ return `<h2>Notifikasi</h2>${('Notification' in window&&Notification.permission!=='granted')?'<div class="card"><p>Aktifkan notifikasi agar pemberitahuan muncul di layar HP.</p><button onclick="askNotif()">Aktifkan notifikasi</button><p class="mut">Muncul saat aplikasi terbuka atau berjalan di latar belakang. Saat aplikasi ditutup penuh belum bisa.</p></div>':''}${NOTIFS.map(n=>`<button class="tile" style="width:100%;margin-bottom:8px" onclick="go('${n.tab}')"><b>${esc(n.t)}</b><br><span class="mut">${esc(n.b)} · ${new Date(n.ts).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></button>`).join('')||'<p class="mut">Belum ada notifikasi.</p>'}`;
+}
+function diffNotify(o,n){
+ const ids=a=>new Set((a||[]).map(x=>x.id)),adm=isAdm();
+ const oa=ids(o.ann);(n.ann||[]).filter(a=>!oa.has(a.id)).forEach(a=>notify('Pengumuman baru',a.judul,'info'));
+ const ot=ids(o.trx);(n.trx||[]).filter(t=>!ot.has(t.id)).reverse().forEach(t=>{
+  if(t.uid===me.id&&t.oleh!==me.id)notify(t.jenis==='isi'?'Saldo masuk':t.jenis==='jual'?'Produk terjual':'Saldo berubah',(plus(t.jenis)?'+':'-')+rp(t.jml)+' · '+t.ket,'dompet');
+  else if(isSup()&&(t.jenis==='isi'||t.jenis==='kurang')&&t.oleh!==me.id)notify('Admin '+(t.jenis==='isi'?'mengisi':'mengurangi')+' saldo',(n.users.find(u=>u.id===t.oleh)||{nama:'?'}).nama+' → '+(n.users.find(u=>u.id===t.uid)||{nama:'?'}).nama+' '+rp(t.jml),'trx')});
+ const orq=new Map((o.topupReq||[]).map(r=>[r.id,r]));
+ (n.topupReq||[]).forEach(r=>{const x=orq.get(r.id);
+  if(!x&&canTopup()&&r.uid!==me.id)notify('Permintaan isi saldo',(n.users.find(u=>u.id===r.uid)||{nama:'?'}).nama+' '+rp(r.jml),'dompet');
+  if(x&&x.status!==r.status&&r.uid===me.id)notify('Permintaan isi saldo '+r.status,rp(r.jml),'dompet')});
+ const oad=ids(o.aduan);if(adm)(n.aduan||[]).filter(a=>!oad.has(a.id)).forEach(a=>notify('Pengaduan baru',a.judul,'aduan'));
+ const oas=new Map((o.aduan||[]).map(a=>[a.id,a.status]));(n.aduan||[]).forEach(a=>{if(a.uid===me.id&&oas.has(a.id)&&oas.get(a.id)!==a.status)notify('Pengaduan '+a.status,a.judul,'aduan')});
+ const oo=new Map((o.orders||[]).map(x=>[x.id,x]));
+ (n.orders||[]).forEach(x=>{const y=oo.get(x.id);
+  if(!y&&x.seller===me.id)notify('Pesanan baru','#'+x.id+' '+x.nama+' \u00d7 '+x.qty+' \u00b7 '+rp(x.total),'toko');
+  if(y&&y.status!==x.status){if(x.buyer===me.id)notify('Pesanan #'+x.id+' '+ORD[x.status],x.nama,'pesanan');else if(x.seller===me.id&&x.status==='batal')notify('Pesanan #'+x.id+' dibatalkan pembeli',x.nama,'toko')}});
+ const otk=new Map((o.tarik||[]).map(x=>[x.id,x]));
+ (n.tarik||[]).forEach(x=>{const y=otk.get(x.id);
+  if(!y&&canTopup()&&x.uid!==me.id)notify('Permintaan tarik saldo',nm(x.uid)+' '+rp(x.jml),'dompet');
+  if(y&&y.status!==x.status&&x.uid===me.id)notify('Penarikan saldo '+x.status,rp(x.jml),'toko')});
+ const ou=ids(o.users);if(adm)(n.users||[]).filter(u=>!ou.has(u.id)&&u.status==='menunggu').forEach(u=>notify('Pendaftar baru',u.nama,'admin'));
+}
+function toko(){
+ const t=S.toko.find(x=>x.uid===me.id);
+ if(!t)return `<h2>Toko saya</h2><div class="card"><h3>Buka toko</h3><p class="mut">Jual produk UMKM Anda ke sesama warga, langsung di aplikasi ini.</p><input id="tn" placeholder="Nama toko"><input id="ta" placeholder="Alamat warung (contoh: Blok B5 No. 3)" value="${esc('Blok '+(me.blok||''))}"><button onclick="bukaToko()">Buka toko</button></div>`;
+ const ps=S.produk.filter(p=>p.tid===t.id);
+ const ords=S.orders.filter(o=>o.seller===me.id).sort((a,b)=>b.ts-a.ts);
+ const baru=ords.filter(o=>o.status==='baru').length;
+ const tk=S.tarik.filter(r=>r.uid===me.id).slice(-4).reverse();
+ return `<h2>${esc(t.nama)}</h2><div class="card"><span class="mut">Saldo penjualan</span><h1>${rp(me.saldo)}</h1></div>
+ <h2>Pesanan masuk${baru?`<span class="badge">${baru}</span>`:''}</h2>${ords.map(o=>ordCard(o,true)).join('')||'<p class="mut">Belum ada pesanan masuk.</p>'}
+ <details class="card"><summary><b>Pengaturan toko dan kurir</b></summary>
+  <label class="mut">Nama toko<input id="tnama" value="${esc(t.nama)}"></label>
+  <label class="mut">Alamat warung<input id="tal" value="${esc(t.alamat||'')}"></label>
+  <label class="mut">Antar ke rumah warga?<select id="tan"><option value="0" ${t.antar?'':'selected'}>Tidak, ambil sendiri saja</option><option value="1" ${t.antar?'selected':''}>Ya, ada kurir toko</option></select></label>
+  <label class="mut">Ongkir kurir toko (Rp, bebas)<input id="tok" type="number" inputmode="numeric" value="${t.ongkir||0}"></label>
+  <label class="mut">Nama kurir (opsional)<input id="tkr" value="${esc(t.kurir||'')}"></label>
+  <button onclick="simpanToko()">Simpan pengaturan</button></details>
+ <details class="card"><summary><b>Tarik saldo</b></summary>
+  <p class="mut">Dana langsung ditahan, lalu admin memproses lewat chat.</p>
+  <input id="tw" type="number" inputmode="numeric" placeholder="Jumlah (min. Rp10.000)">
+  <select id="twm"><option>Tunai ke bendahara</option><option>Transfer bank</option></select>
+  <input id="twc" placeholder="No. rekening dan nama bank (jika transfer)">
+  <button onclick="ajukanTarik()">Ajukan penarikan</button></details>
+ ${tk.map(r=>`<div class="card row sp"><div>Tarik ${rp(r.jml)}<br><span class="mut">${esc(r.metode)} \u00b7 ${esc(r.tgl)}${r.oleh?' \u00b7 oleh '+esc(nm(r.oleh)):''}</span></div><span class="tag ${r.status==='selesai'?'ok':r.status==='ditolak'?'bad':''}">${r.status}</span></div>`).join('')}
+ <div class="card"><h3>Tambah produk</h3><input id="pn2" placeholder="Nama produk"><input id="ph" type="number" inputmode="numeric" placeholder="Harga (Rp)"><input id="ps" type="number" inputmode="numeric" placeholder="Stok"><textarea id="pd" placeholder="Deskripsi produk (opsional)"></textarea><label class="mut">Foto produk (opsional)<input id="pf" type="file" accept="image/*"></label><button onclick="addProduk(${t.id})">Tambah produk</button></div>
+ <h2>Produk saya</h2>${ps.map(p=>`<details class="card"><summary>${p.foto?`<img class="pimg" data-pid="${p.id}" alt="" style="width:40px;height:40px;vertical-align:middle;margin-right:8px">`:''}<b>${esc(p.nama)}</b> \u00b7 ${rp(p.harga)} \u00b7 stok ${p.stok}</summary>
+  <label class="mut">Nama<input id="en${p.id}" value="${esc(p.nama)}"></label>
+  <label class="mut">Harga (Rp)<input id="eh${p.id}" type="number" inputmode="numeric" value="${p.harga}"></label>
+  <label class="mut">Stok<input id="es${p.id}" type="number" inputmode="numeric" value="${p.stok}"></label>
+  <label class="mut">Deskripsi<textarea id="ed${p.id}">${esc(p.desk||'')}</textarea></label>
+  <label class="mut">Ganti foto (opsional)<input id="ef${p.id}" type="file" accept="image/*"></label>
+  <div class="row" style="margin-top:6px"><button onclick="simpanProduk(${p.id})">Simpan perubahan</button><button class="d" onclick="delProduk(${p.id})">Hapus</button></div></details>`).join('')||'<p class="mut">Belum ada produk.</p>'}
+ <h2>Riwayat penjualan</h2>${trxList(S.trx.filter(x=>x.uid===me.id&&x.jenis==='jual'),false)}`;
+}
+function bukaToko(){const n=val('tn').trim();if(!n)return note('Isi nama toko.');S.toko.push({id:id(),uid:me.id,nama:n,alamat:val('ta').trim(),antar:false,ongkir:0,kurir:''});save();note('Toko dibuka. Atur kurir di Pengaturan toko, lalu tambahkan produk.')}
+function simpanToko(){
+ const t=S.toko.find(x=>x.uid===me.id);if(!t)return;
+ const n=val('tnama').trim();if(!n)return note('Nama toko tidak boleh kosong.');
+ t.nama=n;t.alamat=val('tal').trim();t.antar=val('tan')==='1';t.ongkir=Math.max(0,Math.round(+val('tok')||0));t.kurir=val('tkr').trim();
+ save();note('Pengaturan toko disimpan.');
+}
+async function addProduk(t){
+ const n=val('pn2').trim(),h=+val('ph'),st=+val('ps'),d=val('pd').trim(),f=document.getElementById('pf').files[0];
+ if(!n||!(h>0)||!(st>0))return note('Isi nama, harga, dan stok lebih dari 0.');
+ const pid=id();const ok=f?await saveFoto(pid,f):false;
+ S.produk.push({id:pid,tid:t,nama:n,harga:h,stok:st,desk:d,terjual:0,foto:!!ok});save();note('Produk ditambahkan.');
+}
+async function simpanProduk(pid){
+ const n=val('en'+pid).trim(),h=+val('eh'+pid),st=+val('es'+pid),d=val('ed'+pid).trim(),f=document.getElementById('ef'+pid).files[0];
+ if(!n||!(h>0)||!(st>=0))return note('Isi nama, harga lebih dari 0, dan stok 0 atau lebih.');
+ if(f&&!await saveFoto(pid,f))return;
+ const p=S.produk.find(x=>x.id===pid);if(!p)return;
+ p.nama=n;p.harga=Math.round(h);p.stok=Math.round(st);p.desk=d;if(f)p.foto=true;
+ save();note('Produk diperbarui.');
+}
+function stokTambah(p){S.produk.find(x=>x.id===p).stok+=10;save();draw()}
+function delProduk(p){S.produk=S.produk.filter(x=>x.id!==p);if(CLOUD&&window.firebase)firebase.firestore().collection('img').doc(String(p)).delete().catch(()=>{});save();draw()}
+
+/* Profil */
+function profil(){
+ const t=me.tinggal||'Rumah tetap';
+ return `<h2>Profil saya</h2><div class="card"><label>Nama<input id="pn" value="${esc(me.nama)}"></label>
+ <label>Blok / No. rumah<input id="pb" value="${esc(me.blok||'')}"></label>
+ <label>Alamat lengkap (untuk pengantaran)<textarea id="pal">${esc(me.alamat||'')}</textarea></label>
+ <label>Status tempat tinggal<select id="pt">${['Rumah tetap','Ngontrak','Kos'].map(s=>`<option ${s===t?'selected':''}>${s}</option>`).join('')}</select></label>
+ <label>NIK kepala keluarga<input id="pk" inputmode="numeric" maxlength="16" value="${esc(me.nik||'')}"></label>
+ <label>Anggota dalam 1 KK (satu nama per baris)<textarea id="pa" style="min-height:110px">${esc((me.anggota||[]).join('\n'))}</textarea></label>
+ <button onclick="saveProfil()">Simpan perubahan</button></div>`;
+}
+function saveProfil(){
+ const n=val('pn').trim(),nik=val('pk').replace(/\s/g,''),ang=val('pa').split('\n').map(x=>x.trim()).filter(Boolean);
+ if(!n)return note('Nama tidak boleh kosong.');
+ if(nik&&!/^\d{16}$/.test(nik))return note('NIK harus 16 angka.');
+ me.nama=n;me.nik=nik;me.anggota=ang;me.tinggal=val('pt');me.blok=val('pb').trim();me.alamat=val('pal').trim();save();note('Profil diperbarui.');
+}
+
+/* Data warga */
+function warga(){
+ const adm=isAdm();
+ const list=S.users.filter(u=>adm||u.status==='aktif');
+ return `<h2>Data warga</h2>${list.map(u=>`<div class="card"><div class="row sp"><div><h3>${esc(u.nama)}</h3><span class="mut">Blok ${esc(u.blok||'-')} · ${esc(u.tinggal||'Rumah tetap')}${adm?' · '+esc(u.hp):''}</span>${adm&&u.nik?`<br><span class="mut">NIK KK ${esc(u.nik)} · ${(u.anggota||[]).length} orang: ${esc((u.anggota||[]).join(', '))}</span>`:''}</div>
+ <div class="row">${u.role!=='warga'?`<span class="tag">${roleLabel(u)}</span>`:''}${u.status!=='aktif'?`<span class="tag bad">${u.status}</span>`:''}</div></div>
+ ${adm&&u.id!==me.id&&u.role!=='super'?`<div class="row" style="margin-top:8px">${u.status==='menunggu'?`<button class="s" onclick="setStatus(${u.id},'aktif')">Setujui</button><button class="d s" onclick="setStatus(${u.id},'ditolak')">Tolak</button>`:''}
+ ${u.role==='warga'&&u.status==='aktif'&&isSup()?`<button class="g s" onclick="setRole(${u.id},'admin')">Jadikan admin</button>`:''}
+ ${u.role==='admin'&&isSup()?`<button class="g s" onclick="setRole(${u.id},'warga')">Cabut admin</button>`:''}
+ ${u.role==='admin'&&isSup()?['bendahara','humas'].map(j=>`<button class="${u.jabatan===j?'':'g'} s" onclick="setJabatan(${u.id},'${u.jabatan===j?'':j}')">${u.jabatan===j?'Lepas '+j:'Jadikan '+j}</button>`).join(''):''}
+ ${isSup()&&u.pin?`<button class="g s" onclick="resetPin(${u.id})">Reset PIN</button>`:''}
+ ${u.role==='warga'||isSup()?`<button class="d s" onclick="delUser(${u.id})">Hapus akun</button>`:''}</div>`:''}</div>`).join('')}`;
+}
+function setStatus(u,s){S.users.find(x=>x.id===u).status=s;save();note(s==='aktif'?'Pendaftaran disetujui.':'Pendaftaran ditolak.')}
+function setRole(u,r){if(!isSup())return;const x=S.users.find(y=>y.id===u);x.role=r;if(r==='warga')x.jabatan='';save();note(r==='admin'?x.nama+' kini Admin.':'Hak admin '+x.nama+' dicabut.')}
+function delUser(u){const x=S.users.find(y=>y.id===u);if(!x||x.role==='super')return;if(x.role==='admin'&&!isSup())return;
+ S.users=S.users.filter(y=>y.id!==u);Object.keys(S.ronda).forEach(h=>S.ronda[h]=S.ronda[h].filter(i=>i!==u));save();note('Akun '+x.nama+' dihapus.')}
+
+function admin(){
+ const tunggu=S.users.filter(u=>u.status==='menunggu');
+ const sal=S.kas.reduce((s,k)=>s+(k.jenis==='masuk'?k.jml:-k.jml),0);
+ const aktif=S.users.filter(u=>u.status==='aktif'&&u.role==='warga');
+ const lunas=aktif.filter(u=>(S.iuran[BULAN]||[]).includes(u.id)).length;
+ return `<h2>Dashboard admin</h2><div class="row">
+ <div class="card stat">Warga aktif<b>${S.users.filter(u=>u.status==='aktif').length}</b></div>
+ <div class="card stat">Menunggu<b class="${tunggu.length?'bad':''}">${tunggu.length}</b></div>
+ <div class="card stat">Aduan baru<b>${S.aduan.filter(a=>a.status==='Baru').length}</b></div>
+ <div class="card stat">Iuran lunas<b>${lunas}/${aktif.length}</b></div></div>
+ <div class="card">Saldo kas: <b>${rp(sal)}</b></div>
+ <h2>Pendaftaran menunggu</h2>${tunggu.map(u=>`<div class="card"><h3>${esc(u.nama)}</h3><span class="mut">Blok ${esc(u.blok)} · ${esc(u.tinggal||'Rumah tetap')} · ${esc(u.hp)}<br>NIK KK ${esc(u.nik||'-')} · ${(u.anggota||[]).length} orang: ${esc((u.anggota||[]).join(', '))}</span>
+ <div class="row" style="margin-top:8px"><button class="s" onclick="setStatus(${u.id},'aktif')">Setujui</button><button class="d s" onclick="setStatus(${u.id},'ditolak')">Tolak</button></div></div>`).join('')||'<p class="mut">Tidak ada pendaftaran baru.</p>'}
+ ${isSup()?`<h2>Kelola admin</h2><p class="mut">Hanya Super Admin yang bisa menunjuk atau menghapus admin. Buka tab Warga untuk mengubah peran.</p>
+ ${S.users.filter(u=>u.role==='admin').map(u=>`<div class="card row sp">${esc(u.nama)}<button class="d s" onclick="setRole(${u.id},'warga')">Cabut admin</button></div>`).join('')||'<p class="mut">Belum ada admin biasa.</p>'}`:''}
+ ${isSup()?`<button class="d s" style="margin-top:12px" onclick="if(confirm('Hapus SEMUA data aplikasi di HP ini? Tidak bisa dibatalkan.')){S=seed();me=null;save();draw()}">Hapus semua data</button>`:''}`;
+}
+window.addEventListener('hashchange',()=>draw());
+if(CLOUD)initCloud();
+draw();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
+</script>
+</body>
+</html>
