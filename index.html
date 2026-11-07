@@ -104,7 +104,7 @@ function fix(){S.cams=S.cams||[];S.resetReq=S.resetReq||[];S.logReset=S.logReset
 fix();
 let me=null,tab='beranda',msg='',authMode='welcome',camState={};
 try{const u=JSON.parse(localStorage.getItem('hw2u'));if(u)me=S.users.find(x=>x.id===u&&x.status==='aktif')||null}catch(e){}
-const save=()=>{try{localStorage.setItem('hw2u',JSON.stringify(me?me.id:null));if(!CLOUD)localStorage.setItem('hw2',JSON.stringify(S))}catch(e){}if(CLOUD&&!loading&&JSON.stringify(S)!==LAST)push()};
+const save=()=>{try{localStorage.setItem('hw2u',JSON.stringify(me?me.id:null));if(!CLOUD)localStorage.setItem('hw2',JSON.stringify(S))}catch(e){}if(me)saveSeen();if(CLOUD&&!loading&&JSON.stringify(S)!==LAST)push()};
 const isAdm=()=>me&&(me.role==='admin'||me.role==='super');
 const isSup=()=>me&&me.role==='super';
 const nm=id=>(S.users.find(u=>u.id===id)||{nama:'(dihapus)'}).nama;
@@ -127,6 +127,7 @@ function initCloud(){
   LAST=JSON.stringify(S);loading=false;
   let uid=me?me.id:null;if(!uid){try{uid=JSON.parse(localStorage.getItem('hw2u'))}catch(e){}}
   me=uid?(S.users.find(x=>x.id===uid&&x.status==='aktif')||null):null;
+  if(first&&me)catchUp();else if(me)saveSeen();
   const ae=document.activeElement;
   if(first||!(ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)))draw();
  },err=>{loading=false;msg='Gagal membaca data ('+(err.code||'error')+'). Periksa aturan database di Firebase.';draw()});
@@ -155,7 +156,7 @@ function draw(){
  const back=tabs.some(t=>t[0]===tab)?'':`<button class="g s" style="margin:4px 0" onclick="go('beranda')">\u2190 Menu</button>`;
  a.innerHTML=`<div class="top"><div class="row" style="flex-wrap:nowrap;gap:8px">${LOGO(40)}<h1 style="font-size:24px">Hallo Warga</h1></div><button class="g s bellb" onclick="go('notif')" aria-label="Notifikasi">${SVGI(P.bell,22)}<span id="bellc" class="badge" style="display:${unread?'inline-block':'none'}">${unread||''}</span></button></div>
  ${back}${msg?`<div class="card" role="status">${esc(msg)}</div>`:''}${v}
- <nav><div>${tabs.map(t=>`<button class="${tab===t[0]?'on':''}" onclick="go('${t[0]}')"><span class="ni">${IC[t[0]]||'•'}</span>${t[1]}</button>`).join('')}</div></nav>`;
+ <nav><div>${tabs.map(t=>`<button class="${tab===t[0]?'on':''}" onclick="go('${t[0]}')"><span class="ni">${IC[t[0]]||'•'}${t[0]==='notif'&&unread?'<span class="badge" style="position:absolute;margin-left:2px">'+unread+'</span>':''}</span>${t[1]}</button>`).join('')}</div></nav>`;
   startCams();loadImgs();
  const mg=document.getElementById('msgs');if(mg)mg.scrollTop=mg.scrollHeight;
  if(me&&!chatUnsub)startChat();
@@ -183,7 +184,7 @@ async function login(){
  if(u.status==='menunggu'){msg='Pendaftaran Anda masih menunggu persetujuan admin.';return draw()}
  if(u.status==='ditolak'){msg='Pendaftaran Anda ditolak. Hubungi pengurus RT.';return draw()}
  if(u.mustChange){gantiUid=u.id;authMode='ganti';msg='';return draw()}
- me=u;msg='';tab='beranda';save();draw();
+ me=u;msg='';tab='beranda';save();catchUp();draw();
 }
 async function daftar(){
  const n=val('rn').trim(),h=val('lh').trim(),p=val('lp'),b=val('rb').trim();const nik=val('rk').replace(/\s/g,''),tg=val('rs'),ang=val('ra').split('\n').map(x=>x.trim()).filter(Boolean);
@@ -210,6 +211,7 @@ function beranda(){
  const items=menuAll?prim.concat(more):prim.concat([['__more','Layanan Lainnya','more']]);
  return `<div class="gcard" onclick="go('profil')" role="button"><span class="ava">${esc(ava)}</span><div style="flex:1"><b style="font-size:19px">Halo, ${esc(first)}!</b><br><span class="mut">Blok ${esc(me.blok||'-')} \u00b7 ${roleLabel(me)}</span></div>${SVGI(P.chev)}</div>
  <div class="banner" onclick="go('info')" role="button">${SVGI(P.mega,34)}<div style="flex:1"><b>Informasi Penting</b><br><span>${a?esc(a.judul+' \u2014 '+a.isi.slice(0,64)):'Belum ada pengumuman.'}</span></div>${SVGI(P.chev)}</div>
+ ${('Notification' in window&&Notification.permission==='default')?`<div class="card" style="border-color:var(--acc)"><b>Aktifkan notifikasi</b><br><span class="mut">Agar pesan, saldo, dan pesanan baru muncul di layar HP.</span><br><button class="s" style="margin-top:8px" onclick="askNotif()">Aktifkan</button></div>`:''}
  ${isSup()&&!S.recov?`<div class="card" style="border-color:var(--acc);cursor:pointer" onclick="go('profil')"><b>Buat kode pemulihan sandi</b><br><span class="mut">Agar Super Admin tetap bisa masuk jika lupa sandi. Ketuk untuk membuat.</span></div>`:''}
  <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><span class="mut">Saldo dompet</span><div style="font-size:24px;font-weight:800">${rp(me.saldo)}</div></div><button onclick="go('dompet')">Isi saldo</button></div>
  <div class="card"><div class="row sp"><h3 style="font-size:18px">Menu Utama</h3><button class="lnk" onclick="menuAll=!menuAll;draw()">${menuAll?'Tutup':'Lihat Semua'} \u203a</button></div>
@@ -522,13 +524,16 @@ let CHAT=[],chatUnsub=null,chatT0=0,chatRoom=null;
 function stopChat(){if(chatUnsub){chatUnsub();chatUnsub=null}CHAT=[];chatRoom=null}
 function startChat(){
  if(!CLOUD||!me||chatUnsub||!window.firebase||!REF)return;
- chatT0=Date.now();
+ chatT0=Number(localStorage.getItem('hw2cs_'+me.id))||Date.now();
  const col=firebase.firestore().collection('chat');
  const q=isAdm()?col.orderBy('ts').limitToLast(400):col.where('room','==',me.id);
  chatUnsub=q.onSnapshot(sn=>{
-  sn.docChanges().forEach(ch=>{if(ch.type!=='added')return;const m=ch.doc.data();if(m.ts<=chatT0||m.from===me.id)return;
-   const viewing=tab==='chat'&&(!isAdm()||chatRoom===m.room);
-   if(!viewing)notify('Pesan dari '+m.nama,String(m.text).slice(0,80),'chat')});
+  const fresh=[];
+  sn.docChanges().forEach(ch=>{if(ch.type!=='added')return;const m=ch.doc.data();if(m.ts>chatT0)fresh.push(m)});
+  const viewing=m=>tab==='chat'&&(!isAdm()||chatRoom===m.room);
+  const nt=fresh.filter(m=>m.from!==me.id&&!viewing(m));
+  if(nt.length>3)notify(nt.length+' pesan baru','Buka tab Bantuan untuk membaca.','chat');else nt.forEach(m=>notify('Pesan dari '+m.nama,String(m.text).slice(0,80),'chat'));
+  if(fresh.length){chatT0=Math.max(chatT0,...fresh.map(m=>m.ts));try{localStorage.setItem('hw2cs_'+me.id,String(chatT0))}catch(e){}}
   CHAT=sn.docs.map(d=>d.data()).sort((a,b)=>a.ts-b.ts);
   if(tab==='chat')renderChat();
  },()=>{});
@@ -562,18 +567,30 @@ function sendChat(){
  document.getElementById('ci').value='';
 }
 /* Notifikasi */
-let NOTIFS=[],unread=0;try{NOTIFS=JSON.parse(localStorage.getItem('hw2n'))||[]}catch(e){}
+let NOTIFS=[],unread=0,lastRead=0,quietN=null;try{NOTIFS=JSON.parse(localStorage.getItem('hw2n'))||[]}catch(e){}
+try{lastRead=Number(localStorage.getItem('hw2nr'))||0}catch(e){}
+unread=NOTIFS.filter(n=>n.ts>lastRead).length;
+/* Kejadian yang terlewat saat aplikasi ditutup: bandingkan dengan keadaan terakhir yang pernah dilihat */
+function mini(st){const m=a=>(a||[]).map(x=>({id:x.id,status:x.status}));return {ann:m(st.ann),trx:m(st.trx),topupReq:m(st.topupReq),orders:m(st.orders),tarik:m(st.tarik),aduan:m(st.aduan),users:m(st.users),resetReq:m(st.resetReq)}}
+function loadSeen(uid){try{return JSON.parse(localStorage.getItem('hw2seen_'+uid))}catch(e){return null}}
+function saveSeen(){if(!me)return;try{localStorage.setItem('hw2seen_'+me.id,JSON.stringify(mini(S)))}catch(e){}}
+function catchUp(){
+ if(!me)return;const b=loadSeen(me.id);
+ if(b){quietN=0;try{diffNotify(b,S)}catch(e){}const k=quietN;quietN=null;if(k>0)toast(k+' notifikasi baru. Ketuk lonceng untuk melihat.')}
+ saveSeen();
+}
 function toast(m){const d=document.createElement('div');d.setAttribute('role','status');d.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:12px;right:12px;max-width:616px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:14px;z-index:60;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25)';d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),4500)}
 function notify(title,body,tb){
  NOTIFS.unshift({t:title,b:body,tab:tb||'beranda',ts:Date.now()});NOTIFS=NOTIFS.slice(0,40);unread++;
  try{localStorage.setItem('hw2n',JSON.stringify(NOTIFS))}catch(e){}
- toast(title+(body?': '+body:''));
- try{if('Notification' in window&&Notification.permission==='granted'&&document.hidden){navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body:body,icon:'icon-192.png',tag:tb||'hw'}))}}catch(e){}
+ if(quietN!==null)quietN++;
+ else{toast(title+(body?': '+body:''));
+ try{if('Notification' in window&&Notification.permission==='granted'&&document.hidden){navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body:body,icon:'icon-192.png',tag:tb||'hw'}))}}catch(e){}}
  const e=document.getElementById('bellc');if(e){e.textContent=unread;e.style.display='inline-block'}
 }
 function askNotif(){try{Notification.requestPermission().then(()=>draw())}catch(e){note('Browser tidak mendukung notifikasi.')}}
 function notif(){
- unread=0;
+ unread=0;lastRead=Date.now();try{localStorage.setItem('hw2nr',String(lastRead))}catch(e){}
  return `<h2>Notifikasi</h2>${('Notification' in window&&Notification.permission!=='granted')?'<div class="card"><p>Aktifkan notifikasi agar pemberitahuan muncul di layar HP.</p><button onclick="askNotif()">Aktifkan notifikasi</button><p class="mut">Muncul saat aplikasi terbuka atau berjalan di latar belakang. Saat aplikasi ditutup penuh belum bisa.</p></div>':''}${NOTIFS.map(n=>`<button class="tile" style="width:100%;margin-bottom:8px" onclick="go('${n.tab}')"><b>${esc(n.t)}</b><br><span class="mut">${esc(n.b)} · ${new Date(n.ts).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></button>`).join('')||'<p class="mut">Belum ada notifikasi.</p>'}`;
 }
 function diffNotify(o,n){
@@ -679,7 +696,7 @@ async function simpanGanti(){
  if(!u)return note('Sesi habis. Silakan masuk lagi.');
  if(a.length<6)return note('Sandi minimal 6 karakter.');
  if(a!==b)return note('Konfirmasi sandi tidak sama.');
- u.pass=await H(u.hp,a);u.mustChange=false;me=u;gantiUid=null;authMode='masuk';msg='';tab='beranda';save();draw();
+ u.pass=await H(u.hp,a);u.mustChange=false;me=u;gantiUid=null;authMode='masuk';msg='';tab='beranda';save();catchUp();draw();
 }
 async function pulihkan(){
  if(Date.now()<recLock)return note('Terlalu banyak percobaan. Coba lagi beberapa menit.');
@@ -734,7 +751,7 @@ function profil(){
  <button onclick="saveProfil()">Simpan perubahan</button></div>
  <details class="card"><summary><b>Ubah sandi</b></summary><input id="so" type="password" placeholder="Sandi lama" autocomplete="current-password"><input id="sn1" type="password" placeholder="Sandi baru (min. 6 karakter)" autocomplete="new-password"><input id="sn2" type="password" placeholder="Ulangi sandi baru" autocomplete="new-password"><button onclick="ubahSandi()">Simpan sandi baru</button></details>
  ${isSup()?`<details class="card"><summary><b>Kode pemulihan sandi</b> \u00b7 ${S.recov?'sudah dibuat':'belum dibuat'}</summary><p class="mut">Kode ini satu-satunya cara Super Admin masuk kembali jika lupa sandi, karena admin lain tidak bisa mereset Super Admin. Catat di tempat aman.</p><button onclick="buatKode()">${S.recov?'Buat kode baru':'Buat kode pemulihan'}</button></details>`:''}
- <button class="d" style="width:100%;margin-top:4px" onclick="logout()">Keluar dari akun</button><p class="mut" style="text-align:center;font-size:12px">Hallo Warga \u00b7 versi 10</p>`;
+ <button class="d" style="width:100%;margin-top:4px" onclick="logout()">Keluar dari akun</button><p class="mut" style="text-align:center;font-size:12px">Hallo Warga \u00b7 versi 11</p>`;
 }
 function saveProfil(){
  const n=val('pn').trim(),nik=val('pk').replace(/\s/g,''),ang=val('pa').split('\n').map(x=>x.trim()).filter(Boolean);
